@@ -1,0 +1,2418 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f4f6f7">
+<meta name="description" content="내가 이름과 정보를 넣으면 그 AI가 바로 방에 들어오는 동적 AI 컨트롤타워">
+<title>AI 컨트롤타워</title>
+<style>
+  :root{
+    --bg:#f4f6f7;
+    --card:#edf0f2;
+    --ink:#171b23;
+    --ink-2:#2a323c;
+    --muted:#8b939c;
+    --muted-2:#6b727b;
+    --line:#e3e7ea;
+    --mint:#2fbd77;
+    --mint-deep:#127a4a;
+    --mint-soft:#e7f7ee;
+    --dark:#1c2532;
+    --danger:#b4243a;
+    --radius:22px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Malgun Gothic","Helvetica Neue",Arial,sans-serif;
+    font-size:15px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    -webkit-text-size-adjust:100%;
+    text-rendering:optimizeLegibility;
+  }
+  body.locked{overflow:hidden}
+  .app{
+    max-width:520px;
+    margin:0 auto;
+    padding:22px 18px calc(48px + env(safe-area-inset-bottom));
+  }
+  [hidden]{display:none !important}
+
+  /* ---------- header ---------- */
+  .badge{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:7px 12px;border-radius:999px;
+    background:var(--mint-soft);color:#1f9c5f;
+    font-size:12.5px;font-weight:800;letter-spacing:-.01em;
+  }
+  h1{
+    margin:15px 0 18px;
+    font-size:clamp(27px,8.2vw,35px);
+    line-height:1.2;
+    font-weight:900;
+    letter-spacing:-.045em;
+    color:var(--ink);
+  }
+  .team{display:flex;align-items:center;gap:clamp(8px,2.6vw,13px);margin-bottom:22px;min-height:34px}
+  .stack{display:flex;align-items:center}
+  .stack .av{
+    width:clamp(34px,10.4vw,47px);height:clamp(34px,10.4vw,47px);
+    border-radius:clamp(11px,3.3vw,15px);
+    border:3px solid #fff;background:#fff;
+    box-shadow:0 2px 7px rgba(20,25,35,.14);
+    margin-left:calc(-1 * clamp(9px,3.1vw,13px));flex:none;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:900;color:#fff;
+    font-size:clamp(13px,3.9vw,17px);letter-spacing:-.03em;
+    overflow:hidden;
+  }
+  .stack .av:first-child{margin-left:0}
+  .stack .av.none{background:#fff;color:#aab2ba;border-color:#e6eaed}
+  .team-label{font-size:clamp(12px,3.6vw,15px);font-weight:800;letter-spacing:-.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  .av{
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-weight:900;letter-spacing:-.02em;
+    overflow:hidden;flex:none;
+  }
+
+  /* ---------- tabs ---------- */
+  .tabs{
+    display:flex;gap:2px;
+    background:#e3e7ea;border-radius:999px;padding:5px;
+  }
+  .tab{
+    flex:1;border:0;background:transparent;cursor:pointer;
+    padding:13px 4px;border-radius:999px;
+    font:inherit;font-size:15px;font-weight:800;letter-spacing:-.02em;
+    color:var(--muted-2);
+    transition:background .18s ease,color .18s ease,box-shadow .18s ease;
+    white-space:nowrap;
+  }
+  .tab.is-active{background:#fff;color:var(--ink);box-shadow:0 2px 8px rgba(20,25,35,.10)}
+  .tab:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+
+  /* ---------- generic card ---------- */
+  .card{
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:18px 16px;
+    margin-top:16px;
+  }
+  .card h2{font-size:17px;font-weight:900;letter-spacing:-.03em;margin:0}
+  .card-sub{
+    margin:8px 0 14px;
+    font-size:12.5px;line-height:1.62;color:#7d858e;font-weight:600;
+  }
+
+  /* ---------- composer ---------- */
+  .composer-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px}
+  .auto-note{font-size:11.5px;color:#98a0a8;font-weight:700;white-space:nowrap}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .chip{
+    display:inline-flex;align-items:center;gap:6px;
+    background:#fff;border:2px solid transparent;border-radius:999px;
+    padding:7px 12px 7px 8px;
+    font:inherit;font-size:13.5px;font-weight:800;letter-spacing:-.02em;color:#20262f;
+    box-shadow:0 1px 3px rgba(20,25,35,.07);
+    cursor:pointer;white-space:nowrap;max-width:100%;
+    transition:border-color .15s ease,background .15s ease,color .15s ease,opacity .15s ease;
+  }
+  .chip.is-active{border-color:#37c07e;background:#eaf9f1;color:var(--mint-deep)}
+  .chip.is-muted{opacity:.55}
+  .chip.chip-add{background:#f8fafb;color:#8b939c;border:1.5px dashed #d5dee3;box-shadow:none;padding:6px 12px}
+  .chip.chip-add:hover{background:#f1f6f4;color:#5f6771;border-color:#bfd3c8}
+  .chip .chip-name{overflow:hidden;text-overflow:ellipsis;max-width:132px}
+  .chip:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+  .mini{
+    width:22px;height:22px;border-radius:7px;overflow:hidden;flex:none;display:flex;
+    align-items:center;justify-content:center;
+    color:#fff;font-size:10.5px;font-weight:900;letter-spacing:-.02em;
+  }
+  .mini.broadcast{
+    display:flex;align-items:center;justify-content:center;
+    background:#fdeef1;border-radius:999px;
+  }
+  .mini.broadcast svg{width:15px;height:15px;display:block}
+  textarea#input{
+    width:100%;min-height:104px;
+    border:0;border-radius:16px;background:#fff;
+    padding:14px;font:inherit;font-size:15px;line-height:1.55;color:var(--ink);
+    resize:vertical;
+    box-shadow:0 1px 2px rgba(20,25,35,.04);
+  }
+  textarea#input::placeholder{color:#a7aeb6}
+  textarea#input:focus{outline:2px solid #b9e6cf;outline-offset:0}
+  .send{
+    width:100%;margin-top:12px;border:0;border-radius:16px;
+    background:var(--dark);color:#fff;
+    font:inherit;font-size:16px;font-weight:800;letter-spacing:-.02em;
+    padding:17px;cursor:pointer;
+    transition:transform .1s ease,opacity .15s ease,background .15s ease;
+  }
+  .send:active{transform:translateY(1px)}
+  .send:disabled{opacity:.55;cursor:default}
+  .hint{
+    margin:12px 2px 0;font-size:11.5px;line-height:1.62;
+    color:#9aa2ab;font-weight:600;letter-spacing:-.01em;
+  }
+
+  /* ---------- timeline ---------- */
+  .timeline-head{
+    display:flex;justify-content:space-between;align-items:center;
+    margin:24px 2px 12px;
+  }
+  .timeline-head h2{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:900;letter-spacing:-.03em;margin:0}
+  .count{
+    background:#fff;color:#4a525c;
+    font-size:12px;font-weight:800;
+    padding:3px 9px;border-radius:999px;
+    box-shadow:0 1px 3px rgba(20,25,35,.07);
+    font-variant-numeric:tabular-nums;
+  }
+  .live{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:#59626c;letter-spacing:-.02em}
+  .live i{width:8px;height:8px;border-radius:50%;background:#37c07e;box-shadow:0 0 0 3px rgba(55,192,126,.18);display:block;flex:none}
+  .live.is-idle i{background:#c2c9cf;box-shadow:0 0 0 3px rgba(180,190,198,.16)}
+
+  .timeline{display:flex;flex-direction:column;gap:16px;min-height:60px}
+
+  .welcome{
+    background:#fff;border-radius:20px;padding:22px 18px 18px;
+    box-shadow:0 1px 3px rgba(20,25,35,.06);
+    text-align:center;
+  }
+  .welcome .w-ico{
+    width:54px;height:54px;border-radius:18px;margin:0 auto 14px;
+    background:var(--mint-soft);display:flex;align-items:center;justify-content:center;
+  }
+  .welcome .w-ico svg{width:26px;height:26px;display:block}
+  .welcome h3{margin:0 0 8px;font-size:17px;font-weight:900;letter-spacing:-.03em}
+  .welcome p{margin:0 0 16px;font-size:13px;line-height:1.65;color:#7d858e;font-weight:600}
+  .welcome .points{
+    margin:16px 0 0;padding:14px 14px 14px 30px;
+    background:#f8fafb;border-radius:14px;text-align:left;
+    font-size:12px;line-height:1.7;color:#7d858e;font-weight:600;
+  }
+  .welcome .points li{margin:0 0 4px}
+  .welcome .points li:last-child{margin-bottom:0}
+  .welcome .points b{color:#4a525c;font-weight:800}
+
+  .empty{
+    background:#fff;border-radius:20px;padding:18px 16px 16px;
+    box-shadow:0 1px 3px rgba(20,25,35,.06);
+  }
+  .empty p{margin:0 0 13px;font-size:12.5px;font-weight:700;color:#8b939c;text-align:center;line-height:1.6}
+  .examples{display:flex;flex-direction:column;gap:8px}
+  .example{
+    text-align:left;border:1px solid #e8ecef;background:#f8fafb;
+    border-radius:14px;padding:11px 13px;
+    font:inherit;font-size:13.5px;font-weight:700;line-height:1.42;color:var(--ink-2);
+    letter-spacing:-.02em;cursor:pointer;
+    transition:background .15s ease,border-color .15s ease;
+  }
+  .example:hover{background:#f2f7f9;border-color:#d7e2e7}
+  .example:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+  .example em{display:block;font-style:normal;font-size:10.5px;color:#a2aab2;font-weight:700;margin-top:3px}
+
+  .date{
+    align-self:center;
+    background:#e9edef;color:#7d858e;
+    font-size:11.5px;font-weight:800;letter-spacing:-.01em;
+    padding:6px 14px;border-radius:999px;
+  }
+  .notice{
+    align-self:center;
+    display:flex;align-items:center;gap:6px;
+    background:#eef3f0;color:#5d7a69;
+    font-size:11.5px;font-weight:800;letter-spacing:-.01em;
+    padding:7px 14px;border-radius:999px;text-align:center;
+    max-width:100%;
+  }
+
+  .msg{display:flex;gap:9px;align-items:flex-start}
+  .msg.is-new{animation:pop .26s ease both}
+  @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .msg-av{
+    width:36px;height:36px;border-radius:12px;overflow:hidden;flex:none;
+    box-shadow:0 1px 3px rgba(20,25,35,.12);margin-top:2px;
+    font-size:14px;
+  }
+  .bubble-wrap{display:flex;flex-direction:column;gap:6px;max-width:82%;min-width:0}
+  .msg-me{justify-content:flex-end}
+  .msg-me .bubble-wrap{max-width:84%;margin-left:auto;align-items:flex-end}
+  .msg-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .msg-meta b{font-size:13px;font-weight:900;letter-spacing:-.02em}
+  .msg-meta .role{
+    font-size:10.5px;font-weight:800;letter-spacing:-.01em;
+    padding:2px 7px;border-radius:999px;
+    max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .msg-meta .mtag{
+    font-size:9.5px;font-weight:800;letter-spacing:0;
+    color:#a2aab2;background:#f2f5f7;border-radius:999px;padding:2px 6px;
+  }
+  .bubble{
+    font-size:14.5px;line-height:1.62;letter-spacing:-.01em;
+    padding:12px 14px;
+    border-radius:4px 16px 16px 16px;
+    background:#fff;color:#20262f;
+    box-shadow:0 1px 3px rgba(20,25,35,.07);
+    white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;
+  }
+  .bubble.is-error{
+    background:#fdf1f3;box-shadow:inset 0 0 0 1px #f4d5da;
+    color:#8e2438;
+  }
+  .msg-me .bubble{
+    background:var(--dark);color:#fff;
+    border-radius:16px 4px 16px 16px;
+    box-shadow:0 2px 9px rgba(20,25,35,.18);
+  }
+  .msg-foot{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;color:#9aa2ab}
+  .msg-me .msg-foot{justify-content:flex-end}
+  .msg-foot time{font-variant-numeric:tabular-nums}
+  .mention{color:#0f9d58;font-weight:900}
+  .msg-me .mention{color:#9df5c9}
+
+  .typing{
+    align-self:flex-start;display:flex;align-items:center;gap:9px;
+    background:#fff;border-radius:16px;padding:10px 14px;
+    box-shadow:0 1px 3px rgba(20,25,35,.08);
+    font-size:12px;font-weight:700;color:#6b727b;letter-spacing:-.01em;
+  }
+  .typing .ty-av{width:24px;height:24px;border-radius:8px;overflow:hidden;flex:none;font-size:10px}
+  .typing b{color:#2a323c}
+  .dots{display:inline-flex;gap:3px;margin-left:5px}
+  .dots i{width:5px;height:5px;border-radius:50%;background:#b9c0c7;display:block;animation:blink 1.1s infinite}
+  .dots i:nth-child(2){animation-delay:.16s}
+  .dots i:nth-child(3){animation-delay:.32s}
+  @keyframes blink{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-2px)}}
+
+  /* ---------- members ---------- */
+  .add-wide{
+    width:100%;margin-top:16px;border:0;border-radius:18px;
+    background:var(--dark);color:#fff;
+    font:inherit;font-size:15px;font-weight:800;letter-spacing:-.02em;
+    padding:16px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .add-wide:active{transform:translateY(1px)}
+  .add-ghost{
+    width:100%;margin-top:16px;border:1.5px dashed #cfd8dd;
+    background:transparent;color:#5f6771;border-radius:18px;
+    font:inherit;font-size:14px;font-weight:800;letter-spacing:-.02em;
+    padding:15px;cursor:pointer;
+  }
+  .add-ghost:hover{background:#f8fafb;border-color:#b9c6cd}
+  .member{
+    background:#fff;border-radius:20px;padding:15px 14px 13px;
+    box-shadow:0 1px 3px rgba(20,25,35,.07);
+    margin-top:12px;
+  }
+  .member.is-muted{background:#fbfcfc;box-shadow:inset 0 0 0 1.5px #edf0f2}
+  .member-top{display:flex;align-items:center;gap:12px}
+  .member .av{width:48px;height:48px;border-radius:15px;font-size:19px;box-shadow:0 1px 4px rgba(20,25,35,.12)}
+  .member-id{min-width:0;flex:1}
+  .member-name{font-size:15.5px;font-weight:900;letter-spacing:-.02em;margin:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .member-role{font-size:11.5px;font-weight:800;color:#7d858e;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pill{
+    font-size:9.5px;font-weight:800;letter-spacing:-.01em;
+    padding:2px 7px;border-radius:999px;background:#f2f5f7;color:#8b939c;white-space:nowrap;
+  }
+  .pill.api{background:#eaf2ff;color:#2f6df6}
+  .pill.sim{background:#eef7f1;color:#2b9a63}
+  .pill.mute{background:#fdf0f2;color:#b4243a}
+  .member-desc{
+    margin:11px 0 0;font-size:12.5px;line-height:1.62;color:#6b727b;font-weight:600;letter-spacing:-.01em;
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .member-desc.is-empty{color:#a9b0b7;font-style:normal}
+  .member-foot{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;font-size:10.5px;font-weight:700;color:#98a0a8}
+  .member-foot span{background:#f6f8f9;border-radius:999px;padding:3px 8px}
+  .talk{
+    width:100%;border:0;border-radius:13px;background:var(--dark);color:#fff;
+    font:inherit;font-size:13.5px;font-weight:800;letter-spacing:-.02em;
+    padding:12px;cursor:pointer;margin-top:12px;
+  }
+  .talk:active{transform:translateY(1px)}
+  .mrow{display:flex;gap:6px;margin-top:7px}
+  .row-btn{
+    flex:1;border:0;border-radius:11px;background:#f2f5f7;color:#5f6771;
+    font:inherit;font-size:12px;font-weight:800;letter-spacing:-.02em;
+    padding:10px 4px;cursor:pointer;
+  }
+  .row-btn:active{transform:translateY(1px)}
+  .row-btn.danger{background:#fdeef0;color:#b4243a}
+  .row-btn.wake{background:var(--mint-soft);color:var(--mint-deep)}
+
+  /* ---------- settings ---------- */
+  .srow{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:11px 0;border-bottom:1px solid rgba(255,255,255,.8);
+    font-size:13px;font-weight:700;color:#5f6771;letter-spacing:-.01em;
+  }
+  .srow:last-child{border-bottom:0;padding-bottom:2px}
+  .srow strong{font-size:13px;font-weight:900;color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
+  .btn-dark,.btn-danger,.btn-ghost{
+    width:100%;border:0;border-radius:14px;
+    font:inherit;font-size:14px;font-weight:800;letter-spacing:-.02em;
+    padding:14px;cursor:pointer;
+  }
+  .btn-dark{background:var(--dark);color:#fff}
+  .btn-danger{background:#fdecee;color:#b4243a;box-shadow:inset 0 0 0 1px #f6d3d8}
+  .btn-ghost{background:#f2f5f7;color:#5f6771;box-shadow:inset 0 0 0 1px #e3e7ea}
+  .btn-dark+.btn-ghost,.btn-dark+.btn-danger,.btn-ghost+.btn-danger,.btn-ghost+.btn-dark{margin-top:8px}
+  .btn-dark:active,.btn-danger:active,.btn-ghost:active{transform:translateY(1px)}
+  .btn-dark:focus-visible,.btn-danger:focus-visible,.btn-ghost:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+  .api-line{
+    display:flex;align-items:center;gap:8px;
+    padding:9px 0;border-bottom:1px solid rgba(255,255,255,.8);
+    font-size:12.5px;font-weight:700;color:#5f6771;
+  }
+  .api-line:last-child{border-bottom:0}
+  .api-line .dot{width:7px;height:7px;border-radius:50%;background:#c2c9cf;flex:none}
+  .api-line .dot.on{background:#37c07e}
+  .api-line .who{font-weight:900;color:var(--ink)}
+  .api-line .st{margin-left:auto;font-size:11px;color:#98a0a8;white-space:nowrap}
+
+  /* ---------- sheet ---------- */
+  .sheet{
+    position:fixed;inset:0;z-index:50;
+    background:rgba(16,20,26,.42);
+    display:flex;align-items:flex-end;justify-content:center;
+  }
+  .sheet-panel{
+    width:100%;max-width:520px;background:#f7f9fa;
+    border-radius:24px 24px 0 0;
+    max-height:92vh;max-height:92dvh;
+    display:flex;flex-direction:column;
+    box-shadow:0 -12px 40px rgba(16,20,26,.24);
+    animation:rise .24s ease both;
+  }
+  @keyframes rise{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+  .sheet-head{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:16px 18px 12px;border-bottom:1px solid #e6ebee;flex:none;
+  }
+  .sheet-head h3{margin:0;font-size:17px;font-weight:900;letter-spacing:-.03em}
+  .sheet-head .x{
+    border:0;background:#eef2f4;color:#5f6771;border-radius:999px;
+    font:inherit;font-size:12px;font-weight:800;padding:7px 13px;cursor:pointer;
+  }
+  .sheet-body{
+    padding:16px 18px 20px;overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1 1 auto;
+  }
+  .sheet-foot{
+    padding:12px 18px calc(14px + env(safe-area-inset-bottom));
+    border-top:1px solid #e6ebee;display:flex;gap:8px;flex:none;background:#f7f9fa;
+    border-radius:0 0 0 0;
+  }
+  .sheet-foot button{flex:1}
+  .field{margin-bottom:16px}
+  .lbl{
+    display:flex;align-items:center;gap:6px;
+    font-size:12.5px;font-weight:900;letter-spacing:-.02em;color:#3a434d;
+    margin-bottom:7px;
+  }
+  .opt,.req{
+    font-size:9.5px;font-weight:800;letter-spacing:0;
+    padding:2px 6px;border-radius:999px;
+  }
+  .opt{background:#eef2f4;color:#98a0a8}
+  .req{background:var(--mint-soft);color:#2b9a63}
+  .field input[type=text],.field input[type=password],.field textarea,.field select{
+    width:100%;border:1.5px solid #e2e8eb;border-radius:13px;background:#fff;
+    padding:12px 13px;font:inherit;font-size:14.5px;color:var(--ink);
+    box-shadow:0 1px 2px rgba(20,25,35,.03);
+  }
+  .field input:focus,.field textarea:focus,.field select:focus{
+    outline:0;border-color:#9ad8b8;box-shadow:0 0 0 3px rgba(47,189,119,.13);
+  }
+  .field input::placeholder,.field textarea::placeholder{color:#b0b8bf}
+  .field textarea{min-height:104px;resize:vertical;line-height:1.6}
+  .field select{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,#9aa2ab 50%),linear-gradient(135deg,#9aa2ab 50%,transparent 50%);background-position:calc(100% - 19px) 20px,calc(100% - 14px) 20px;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:36px}
+  .field input.is-bad{border-color:#f0aab4;box-shadow:0 0 0 3px rgba(224,85,111,.12)}
+  .err{margin:6px 2px 0;font-size:11.5px;font-weight:800;color:var(--danger)}
+  .note{margin:7px 2px 0;font-size:11px;line-height:1.6;color:#98a0a8;font-weight:600}
+  .avatar-row{display:flex;gap:12px;align-items:flex-start}
+  .av-preview{
+    width:54px;height:54px;border-radius:17px;flex:none;
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:22px;font-weight:900;letter-spacing:-.03em;
+    box-shadow:0 2px 8px rgba(20,25,35,.16);
+    transition:background .18s ease;
+  }
+  .avatar-controls{flex:1;min-width:0}
+  .swatches{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px}
+  .swatch{
+    width:24px;height:24px;border-radius:8px;border:0;cursor:pointer;
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.9);
+    position:relative;
+  }
+  .swatch.is-on{outline:2.5px solid #1c2532;outline-offset:2px;box-shadow:none}
+  .swatch:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+  .glyph-input{width:100%}
+  .seg{display:flex;gap:3px;background:#e8edef;border-radius:13px;padding:4px}
+  .seg-btn{
+    flex:1;border:0;background:transparent;border-radius:10px;
+    font:inherit;font-size:12.5px;font-weight:800;letter-spacing:-.02em;color:#6b727b;
+    padding:10px 6px;cursor:pointer;
+  }
+  .seg-btn.is-active{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(20,25,35,.1)}
+  .api-box{
+    margin-top:2px;padding:14px;border-radius:15px;background:#fff;
+    box-shadow:inset 0 0 0 1.5px #e6ebee;
+  }
+  .api-box .field:last-child{margin-bottom:0}
+  .api-box .field{margin-bottom:12px}
+  .key-row{display:flex;gap:6px}
+  .key-row input{flex:1;min-width:0}
+  .key-row .eye{
+    flex:none;border:1.5px solid #e2e8eb;background:#fff;border-radius:12px;
+    font:inherit;font-size:11.5px;font-weight:800;color:#6b727b;padding:0 11px;cursor:pointer;
+  }
+  .warn{
+    display:flex;gap:8px;align-items:flex-start;
+    margin-top:10px;padding:10px 12px;border-radius:12px;background:#fff9ec;
+    font-size:10.5px;line-height:1.6;color:#8a6a2a;font-weight:600;
+  }
+  .warn svg{width:14px;height:14px;flex:none;margin-top:2px}
+
+  /* ---------- modal ---------- */
+  .modal{
+    position:fixed;inset:0;z-index:60;
+    background:rgba(16,20,26,.42);
+    display:flex;align-items:center;justify-content:center;
+    padding:22px;
+  }
+  .modal-box{
+    width:100%;max-width:340px;background:#fff;border-radius:20px;
+    padding:20px 18px 16px;box-shadow:0 18px 40px rgba(16,20,26,.28);
+  }
+  .modal-box h3{margin:0 0 8px;font-size:16.5px;font-weight:900;letter-spacing:-.03em}
+  .modal-box p{margin:0 0 18px;font-size:12.5px;line-height:1.6;color:#6b727b;font-weight:600}
+  .modal-actions{display:flex;gap:8px}
+  .modal-actions button{flex:1}
+
+  .toast{
+    position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));
+    transform:translateX(-50%) translateY(10px);
+    background:var(--dark);color:#fff;
+    font-size:12.5px;font-weight:700;letter-spacing:-.01em;
+    padding:11px 16px;border-radius:999px;
+    box-shadow:0 8px 22px rgba(16,20,26,.24);
+    opacity:0;pointer-events:none;z-index:70;
+    transition:opacity .22s ease,transform .22s ease;
+    max-width:calc(100vw - 40px);text-align:center;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .foot{
+    margin-top:26px;text-align:center;
+    font-size:11px;line-height:1.7;color:#a2aab2;font-weight:600;
+    letter-spacing:-.01em;
+  }
+  button{touch-action:manipulation}
+  @media (max-width:560px){
+    .field input[type=text],.field input[type=password],.field textarea,.field select,
+    textarea#input{font-size:16px}
+  }
+  @media (min-width:560px){
+    .app{padding-top:34px}
+    .sheet{align-items:center;padding:24px}
+    .sheet-panel{border-radius:22px;max-height:88vh}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none !important;transition:none !important}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="hero">
+    <span class="badge" id="heroBadge">AI 컨트롤타워</span>
+    <h1 id="heroTitle">내가 부른 AI가<br>여기서 답해요</h1>
+    <div class="team">
+      <div class="stack" id="heroStack" aria-hidden="true"></div>
+      <span class="team-label" id="heroLabel">아직 AI가 없어요</span>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="화면 전환">
+    <button class="tab is-active" type="button" role="tab" id="tab-chat" aria-controls="panel-chat" aria-selected="true" data-tab="chat">대화</button>
+    <button class="tab" type="button" role="tab" id="tab-members" aria-controls="panel-members" aria-selected="false" data-tab="members">AI 관리</button>
+    <button class="tab" type="button" role="tab" id="tab-settings" aria-controls="panel-settings" aria-selected="false" data-tab="settings">설정</button>
+  </nav>
+
+  <main>
+    <!-- ================= 대화 ================= -->
+    <section id="panel-chat" class="panel" role="tabpanel" aria-labelledby="tab-chat">
+      <div class="card composer" id="composerCard">
+        <div class="composer-head">
+          <h2>AI에게 시킬 일</h2>
+          <span class="auto-note" id="composerNote">답장은 자동으로 와요</span>
+        </div>
+
+        <div class="chips" id="chips" role="group" aria-label="답장할 AI 고르기"></div>
+
+        <textarea id="input" placeholder="예: 내일 동선 짜고 준비물 정리해 줘" aria-label="AI에게 시킬 일"></textarea>
+        <button class="send" id="send" type="button">지시 남기기</button>
+        <p class="hint" id="composerHint">이름을 콕 부르고 싶으면 @이름처럼 적어도 돼요.</p>
+      </div>
+
+      <div class="timeline-head" id="timelineHead">
+        <h2>대화 <span class="count" id="count">0</span></h2>
+        <span class="live is-idle" id="live"><i></i><span id="liveLabel">대기 중</span></span>
+      </div>
+
+      <div class="timeline" id="timeline" aria-live="polite" aria-relevant="additions"></div>
+    </section>
+
+    <!-- ================= AI 관리 ================= -->
+    <section id="panel-members" class="panel" role="tabpanel" aria-labelledby="tab-members" hidden>
+      <button class="add-wide" id="addWide" type="button">
+        <span style="font-size:18px;line-height:1">+</span> 새 AI 추가하기
+      </button>
+      <div id="memberList"></div>
+    </section>
+
+    <!-- ================= 설정 ================= -->
+    <section id="panel-settings" class="panel" role="tabpanel" aria-labelledby="tab-settings" hidden>
+      <div class="card">
+        <h2>저장 상태</h2>
+        <p class="card-sub">AI 정보와 대화는 이 기기 브라우저(localStorage)에만 저장돼요. 새로고침하거나 앱을 다시 열어도 그대로 남습니다.</p>
+        <div class="srow"><span>저장</span><strong id="s-storage">확인 중</strong></div>
+        <div class="srow"><span>등록된 AI</span><strong id="s-ais">0개</strong></div>
+        <div class="srow"><span>대화</span><strong id="s-total">0건</strong></div>
+        <div class="srow"><span>마지막 저장</span><strong id="s-saved">-</strong></div>
+      </div>
+
+      <div class="card">
+        <h2>실제 API 연결</h2>
+        <p class="card-sub">연결된 AI만 브라우저에서 직접 API를 호출해요. 키는 이 브라우저에만 저장되고, 답을 받을 때 해당 제공자에게만 전달됩니다.</p>
+        <div id="apiList"></div>
+      </div>
+
+      <div class="card">
+        <h2>내보내기</h2>
+        <p class="card-sub">대화와 AI 설정을 JSON 파일로 내려받아요. 백업이나 다른 기기로 옮길 때 쓰세요.</p>
+        <button class="btn-dark" id="exportChat" type="button">대화 내역 JSON 내보내기</button>
+        <button class="btn-ghost" id="exportAll" type="button">AI 설정까지 전체 백업 (키 제외)</button>
+      </div>
+
+      <div class="card">
+        <h2>초기화</h2>
+        <p class="card-sub">지우는 건 되돌릴 수 없어요.</p>
+        <button class="btn-ghost" id="clearChat" type="button">대화만 비우기</button>
+        <button class="btn-danger" id="resetAll" type="button">AI 설정 초기화 (전체 삭제)</button>
+      </div>
+
+      <div class="card">
+        <h2>안내</h2>
+        <p class="card-sub" style="margin-bottom:0">
+          시뮬레이션 모드는 API 키 없이 입력한 이름·역할·지침을 반영해 답을 만듭니다. 실제 정보가 필요하면 실제 API를 연결하거나 피클에게 시켜 주세요.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <p class="foot">AI 이름과 정보는 소영 님이 넣은 그대로 · 이 기기에만 저장돼요</p>
+</div>
+
+<!-- ================= AI 추가/수정 ================= -->
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-head">
+      <h3 id="sheetTitle">새 AI 추가</h3>
+      <button class="x" id="sheetClose" type="button">닫기</button>
+    </div>
+    <div class="sheet-body">
+      <div class="field">
+        <label class="lbl" for="f-name">AI 이름 <span class="req">필수</span></label>
+        <input id="f-name" type="text" maxlength="20" placeholder="예: 뮤즈, 보안관, 코드봇" autocomplete="off" enterkeyhint="done">
+        <p class="err" id="f-name-err" hidden>이름을 먼저 적어 주세요.</p>
+      </div>
+
+      <div class="field">
+        <label class="lbl" for="f-role">역할 · 한 줄 소개 <span class="opt">선택</span></label>
+        <input id="f-role" type="text" maxlength="60" placeholder="예: 총괄 기획, 코드 리뷰, 자료 조사">
+      </div>
+
+      <div class="field">
+        <label class="lbl" for="f-prompt">지침 · AI 정보 <span class="opt">선택</span></label>
+        <textarea id="f-prompt" maxlength="2000" placeholder="성격, 말투, 특기, 꼭 지킬 규칙을 적어 주세요.&#10;예: 항상 근거를 붙이고 3줄 안으로 답한다. 표를 자주 쓴다. 반말은 쓰지 않는다."></textarea>
+        <p class="note">여기 적은 내용이 그대로 그 AI의 성격과 답변 방식이 돼요.</p>
+      </div>
+
+      <div class="field">
+        <div class="lbl">대표 색상 · 아바타 글자</div>
+        <div class="avatar-row">
+          <div class="av-preview" id="avPreview">AI</div>
+          <div class="avatar-controls">
+            <div class="swatches" id="swatches" role="group" aria-label="대표 색상"></div>
+            <input class="glyph-input" id="f-glyph" type="text" maxlength="2" placeholder="글자 또는 이모지" aria-label="아바타 글자">
+          </div>
+        </div>
+        <p class="note">비워 두면 이름 첫 글자와 자동 색상이 들어가요.</p>
+      </div>
+
+      <div class="field">
+        <div class="lbl">응답 방식</div>
+        <div class="seg" role="group" aria-label="응답 방식">
+          <button class="seg-btn is-active" type="button" data-mode="sim" aria-pressed="true">시뮬레이션</button>
+          <button class="seg-btn" type="button" data-mode="api" aria-pressed="false">실제 API 연결</button>
+        </div>
+        <p class="note" id="modeNote">API 키 없이도 입력한 이름·역할·지침을 반영해 답해요.</p>
+      </div>
+
+      <div id="apiFields" hidden>
+        <div class="api-box">
+          <div class="field">
+            <label class="lbl" for="f-provider">제공자</label>
+            <select id="f-provider">
+              <option value="openai">OpenAI 호환 (GPT)</option>
+              <option value="anthropic">Anthropic (Claude)</option>
+              <option value="gemini">Google Gemini</option>
+              <option value="custom">커스텀 엔드포인트</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="lbl" for="f-model">모델명</label>
+            <input id="f-model" type="text" placeholder="예: gpt-4o-mini" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="field">
+            <label class="lbl" for="f-base">API Base URL</label>
+            <input id="f-base" type="text" placeholder="https://api.openai.com/v1" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="field">
+            <label class="lbl" for="f-key">API Key</label>
+            <div class="key-row">
+              <input id="f-key" type="password" placeholder="sk-..." autocomplete="off" spellcheck="false">
+              <button class="eye" id="keyEye" type="button">보기</button>
+            </div>
+          </div>
+          <div class="warn">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.5 21 19H3L12 3.5z" stroke="#c08b17" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 9.5v4.2" stroke="#c08b17" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16.4" r="1" fill="#c08b17"/></svg>
+            <span>키는 이 브라우저에만 저장돼요. 브라우저에서 바로 호출하므로 제공자의 CORS 정책에 따라 막힐 수 있고, 그때는 안내 문구가 말풍선으로 표시됩니다.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sheet-foot">
+      <button class="btn-ghost" id="sheetCancel" type="button">취소</button>
+      <button class="btn-dark" id="sheetSave" type="button">추가하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 확인 모달 ================= -->
+<div class="modal" id="modal" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-desc">
+    <h3 id="modal-title">확인</h3>
+    <p id="modal-desc"></p>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="modal-cancel" type="button">취소</button>
+      <button class="btn-danger" id="modal-ok" type="button">확인</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<noscript>
+  <p style="padding:16px;text-align:center;font-size:13px;color:#6b727b">이 페이지는 자바스크립트가 필요해요. 브라우저 설정에서 자바스크립트를 켜고 다시 열어 주세요.</p>
+</noscript>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ===============================================================
+     1. 기본값
+  =============================================================== */
+  var STORAGE_KEY = 'ai-tower.v1';
+
+  var PALETTE = ['#2f6df6', '#0f9d58', '#e0556f', '#7c3aed', '#d97706', '#0891b2', '#db2777', '#475569', '#0d9488', '#b45309'];
+
+  var PROVIDERS = {
+    openai: {
+      label: 'OpenAI 호환',
+      base: 'https://api.openai.com/v1',
+      model: 'gpt-4o-mini',
+      note: '모델 예: gpt-4o-mini · gpt-4.1-mini'
+    },
+    anthropic: {
+      label: 'Anthropic',
+      base: 'https://api.anthropic.com/v1',
+      model: 'claude-sonnet-4-5',
+      note: '모델 예: claude-sonnet-4-5 · claude-haiku-4-5'
+    },
+    gemini: {
+      label: 'Google Gemini',
+      base: 'https://generativelanguage.googleapis.com/v1beta',
+      model: 'gemini-2.5-flash',
+      note: '모델 예: gemini-2.5-flash · gemini-2.5-pro'
+    },
+    custom: {
+      label: '커스텀',
+      base: '',
+      model: '',
+      note: 'OpenAI 호환이면 https://내주소/v1 처럼 적어 주세요.'
+    }
+  };
+
+  /* ===============================================================
+     2. 유틸
+  =============================================================== */
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function uid() { return 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function escRe(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  function esc(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function clampText(s, n) {
+    var t = String(s).replace(/\s+/g, ' ').replace(/^@\S+\s*/, '').trim();
+    if (t.length <= n) return t;
+    return t.slice(0, n).replace(/[\s,·.]+$/, '') + '…';
+  }
+
+  function firstGrapheme(name) {
+    var s = String(name || '').trim();
+    if (!s) return 'AI';
+    var out = '';
+    for (var i = 0; i < s.length; i++) {
+      out += s.charAt(i);
+      var code = s.charCodeAt(i);
+      if (code >= 0xD800 && code <= 0xDBFF && i + 1 < s.length) { out += s.charAt(i + 1); i++; }
+      if (out.length >= 2) break;
+      /* 한글·영문은 한 글자만 */
+      if (code < 0xD800) break;
+    }
+    return out;
+  }
+
+  function hexA(hex, a) {
+    var h = String(hex || '#2f6df6').replace('#', '');
+    if (h.length === 3) h = h.charAt(0) + h.charAt(0) + h.charAt(1) + h.charAt(1) + h.charAt(2) + h.charAt(2);
+    var r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+    if (!isFinite(r)) r = 47;
+    if (!isFinite(g)) g = 109;
+    if (!isFinite(b)) b = 246;
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+  }
+
+  function fmtTime(ts) {
+    var d = new Date(ts);
+    var h = d.getHours();
+    var ap = h < 12 ? '오전' : '오후';
+    var hh = h % 12;
+    if (hh === 0) hh = 12;
+    var mm = d.getMinutes();
+    return ap + ' ' + hh + ':' + (mm < 10 ? '0' + mm : mm);
+  }
+
+  function fmtDate(ts) {
+    var d = new Date(ts);
+    var wd = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()];
+    return d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + wd + '요일';
+  }
+
+  function dateKey(ts) {
+    var d = new Date(ts);
+    return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+  }
+
+  function fmtStamp(ts) {
+    if (!ts) return '-';
+    var d = new Date(ts);
+    return (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + fmtTime(ts);
+  }
+
+  function nowDay() {
+    var d = new Date();
+    return d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+  }
+
+  /* ===============================================================
+     3. 상태
+  =============================================================== */
+  var state = {
+    ais: [],
+    messages: [],
+    target: 'all',
+    savedAt: null
+  };
+
+  var storageOK = (function () {
+    try {
+      var k = '__tower_probe__';
+      window.localStorage.setItem(k, '1');
+      window.localStorage.removeItem(k);
+      return true;
+    } catch (e) { return false; }
+  })();
+
+  function byId(id) {
+    for (var i = 0; i < state.ais.length; i++) if (state.ais[i].id === id) return state.ais[i];
+    return null;
+  }
+
+  function activeAis() {
+    return state.ais.filter(function (a) { return !a.muted; });
+  }
+
+  function cleanAi(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    var name = typeof raw.name === 'string' ? raw.name.trim().slice(0, 20) : '';
+    if (!name) return null;
+    var provider = raw.provider;
+    if (!PROVIDERS[provider]) provider = 'openai';
+    return {
+      id: typeof raw.id === 'string' && raw.id ? raw.id : uid(),
+      name: name,
+      role: typeof raw.role === 'string' ? raw.role.slice(0, 60) : '',
+      prompt: typeof raw.prompt === 'string' ? raw.prompt.slice(0, 2000) : '',
+      color: /^#[0-9a-fA-F]{6}$/.test(raw.color) ? raw.color : PALETTE[0],
+      glyph: typeof raw.glyph === 'string' && raw.glyph.trim() ? raw.glyph.trim().slice(0, 4) : firstGrapheme(name),
+      mode: raw.mode === 'api' ? 'api' : 'sim',
+      provider: provider,
+      model: typeof raw.model === 'string' ? raw.model.slice(0, 80) : '',
+      baseUrl: typeof raw.baseUrl === 'string' ? raw.baseUrl.slice(0, 300) : '',
+      apiKey: typeof raw.apiKey === 'string' ? raw.apiKey.slice(0, 300) : '',
+      muted: !!raw.muted,
+      createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : Date.now()
+    };
+  }
+
+  function cleanMessage(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    var text = typeof raw.text === 'string' ? raw.text : '';
+    if (!text) return null;
+    var ts = typeof raw.ts === 'number' && isFinite(raw.ts) ? raw.ts : Date.now();
+    if (raw.from === 'me') return { id: raw.id || uid(), from: 'me', text: text, ts: ts };
+    if (raw.from === 'notice') return { id: raw.id || uid(), from: 'notice', text: text, ts: ts };
+    if (typeof raw.from !== 'string' || !raw.from) return null;
+    var snap = raw.ai && typeof raw.ai === 'object' ? raw.ai : {};
+    return {
+      id: raw.id || uid(),
+      from: raw.from,
+      text: text,
+      ts: ts,
+      error: !!raw.error,
+      ai: {
+        name: typeof snap.name === 'string' ? snap.name.slice(0, 20) : 'AI',
+        glyph: typeof snap.glyph === 'string' ? snap.glyph.slice(0, 4) : 'AI',
+        color: /^#[0-9a-fA-F]{6}$/.test(snap.color) ? snap.color : '#475569',
+        role: typeof snap.role === 'string' ? snap.role.slice(0, 60) : '',
+        mode: snap.mode === 'api' ? 'api' : 'sim'
+      }
+    };
+  }
+
+  function load() {
+    if (!storageOK) return;
+    try {
+      var raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      var data = JSON.parse(raw);
+      if (!data || typeof data !== 'object') return;
+
+      var ais = Array.isArray(data.ais) ? data.ais.map(cleanAi).filter(Boolean) : [];
+      var seen = {};
+      state.ais = ais.filter(function (a) {
+        if (seen[a.id]) return false;
+        seen[a.id] = 1;
+        return true;
+      });
+      state.messages = Array.isArray(data.messages) ? data.messages.map(cleanMessage).filter(Boolean) : [];
+      var tgt = data.target;
+      state.target = (tgt === 'all' || byId(tgt)) ? tgt : 'all';
+      state.savedAt = typeof data.savedAt === 'number' ? data.savedAt : null;
+    } catch (e) {
+      state.ais = [];
+      state.messages = [];
+      state.target = 'all';
+      state.savedAt = null;
+    }
+  }
+
+  function save() {
+    if (state.messages.length > 400) state.messages = state.messages.slice(-300);
+    if (!storageOK) { renderSettings(); return; }
+    var now = Date.now();
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        v: 1,
+        ais: state.ais,
+        messages: state.messages,
+        target: state.target,
+        savedAt: now
+      }));
+      state.savedAt = now;
+    } catch (e) {
+      storageOK = false;
+      toast('저장 공간이 부족해 자동 저장을 멈췄어요');
+    }
+    renderSettings();
+  }
+
+  /* ===============================================================
+     4. 공통 DOM
+  =============================================================== */
+  var timeline = $('#timeline');
+  var countEl = $('#count');
+  var input = $('#input');
+  var sendBtn = $('#send');
+  var chipsWrap = $('#chips');
+  var toastEl = $('#toast');
+  var modal = $('#modal');
+  var sheet = $('#sheet');
+  var toastTimer = null;
+  var typingAi = null;
+  var initialRender = true;
+  var confirmAction = null;
+
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 2600);
+  }
+
+  function scrollToEnd() {
+    if (initialRender) return;
+    try { window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' }); }
+    catch (e) { window.scrollTo(0, document.documentElement.scrollHeight); }
+  }
+
+  /* ===============================================================
+     5. 멘션
+  =============================================================== */
+  function mentionRegexHTML() {
+    if (!state.ais.length) return null;
+    var names = state.ais.map(function (a) { return esc(a.name); })
+      .filter(Boolean)
+      .sort(function (a, b) { return b.length - a.length; });
+    if (!names.length) return null;
+    return new RegExp('@(?:' + names.map(escRe).join('|') + ')', 'gi');
+  }
+
+  function highlight(escaped) {
+    var re = mentionRegexHTML();
+    if (!re) return escaped;
+    return escaped.replace(re, function (m) { return '<span class="mention">' + m + '</span>'; });
+  }
+
+  function findMentions(text) {
+    var work = String(text).toLowerCase();
+    var out = [];
+    var list = state.ais.slice().sort(function (a, b) { return b.name.length - a.name.length; });
+    for (var i = 0; i < list.length; i++) {
+      var needle = '@' + list[i].name.toLowerCase();
+      if (work.indexOf(needle) !== -1) {
+        out.push(list[i].id);
+        work = work.split(needle).join(' ');
+      }
+    }
+    return out;
+  }
+
+  /* ===============================================================
+     6. 렌더 — 헤더 · 칩 · 타임라인
+  =============================================================== */
+  function renderHero() {
+    var stack = $('#heroStack');
+    var label = $('#heroLabel');
+    var n = state.ais.length;
+    var html = '';
+    var show = state.ais.slice(0, 6);
+    for (var i = 0; i < show.length; i++) {
+      html += '<span class="av" title="' + esc(show[i].name) + '" style="background:' + show[i].color + '">' + esc(show[i].glyph) + '</span>';
+    }
+    if (n > 6) html += '<span class="av" style="background:#dfe5e9;color:#5f6771">+' + (n - 6) + '</span>';
+    if (!n) html = '<span class="av none">+</span>';
+    stack.innerHTML = html;
+    if (!n) label.textContent = '아직 AI가 없어요';
+    else {
+      var muted = state.ais.filter(function (a) { return a.muted; }).length;
+      label.textContent = 'AI ' + n + '개가 함께해요' + (muted ? ' · 음소거 ' + muted : '');
+    }
+  }
+
+  function renderChips() {
+    var html = '<button class="chip' + (state.target === 'all' ? ' is-active' : '') + '" type="button" data-target="all" aria-pressed="' + (state.target === 'all') + '">' +
+      '<span class="mini broadcast" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 10.2v3.6c0 .8.6 1.4 1.4 1.4H8l4.2 3.4c.6.5 1.5.1 1.5-.7V6.1c0-.8-.9-1.2-1.5-.7L8 8.8H5.4C4.6 8.8 4 9.4 4 10.2z" fill="#e0556f"/><path d="M16.4 9.1c1.2 1 1.8 2 1.8 3s-.6 2-1.8 3" stroke="#e0556f" stroke-width="1.9" fill="none" stroke-linecap="round"/></svg></span>모두에게' +
+      '</button>';
+    for (var i = 0; i < state.ais.length; i++) {
+      var a = state.ais[i];
+      var on = state.target === a.id;
+      html += '<button class="chip' + (on ? ' is-active' : '') + (a.muted ? ' is-muted' : '') + '" type="button" data-target="' + esc(a.id) + '" aria-pressed="' + on + '" title="' + esc(a.name) + (a.muted ? ' (음소거)' : '') + '">' +
+        '<span class="mini" style="background:' + a.color + '" aria-hidden="true">' + esc(a.glyph) + '</span>' +
+        '<span class="chip-name">' + esc(a.name) + '</span>' +
+        '</button>';
+    }
+    html += '<button class="chip chip-add" type="button" data-add="1" aria-label="새 AI 추가하기" title="새 AI 추가하기">+ AI</button>';
+    chipsWrap.innerHTML = html;
+    renderHint();
+    $('#composerNote').textContent = state.ais.length ? '답장은 자동으로 와요' : 'AI를 추가하면 답장이 와요';
+  }
+
+  function renderHint() {
+    var hint = $('#composerHint');
+    if (!state.ais.length) { hint.textContent = 'AI를 추가하면 바로 답장이 와요.'; return; }
+    var names = state.ais.slice(0, 3).map(function (a) { return '@' + a.name; });
+    hint.textContent = '이름을 콕 부르고 싶으면 ' + names.join(' ') + '처럼 적어도 돼요.';
+  }
+
+  function renderLive() {
+    var live = $('#live');
+    var label = $('#liveLabel');
+    var n = activeAis().length;
+    if (typingAi) {
+      live.classList.remove('is-idle');
+      label.textContent = typingAi.name + ' 답장 중';
+    } else if (!state.ais.length) {
+      live.classList.add('is-idle');
+      label.textContent = 'AI 없음';
+    } else if (n === 0) {
+      live.classList.add('is-idle');
+      label.textContent = '모두 음소거';
+    } else {
+      live.classList.remove('is-idle');
+      label.textContent = n + '개 AI 대기 중';
+    }
+  }
+
+  function welcomeBlock() {
+    var wrap = document.createElement('div');
+    wrap.className = 'welcome';
+    wrap.innerHTML =
+      '<div class="w-ico"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.2" stroke="#2fbd77" stroke-width="1.8"/><path d="M12 8.4v7.2M8.4 12h7.2" stroke="#2fbd77" stroke-width="1.8" stroke-linecap="round"/></svg></div>' +
+      '<h3>아직 AI가 없어요</h3>' +
+      '<p>이름과 정보를 넣으면 그 AI가 바로 이 방에 들어와서<br>소영 님이 시키는 일에 답해요.<br>제가 미리 정해 둔 AI는 없습니다.</p>' +
+      '<button class="btn-dark" id="welcomeAdd" type="button">+ 새 AI 추가하기</button>' +
+      '<ul class="points">' +
+        '<li><b>이름</b>만 있으면 바로 추가되고, 나중에 수정할 수 있어요.</li>' +
+        '<li><b>지침</b>에 말투·특기·규칙을 적으면 답에 반영돼요.</li>' +
+        '<li><b>실제 API</b>를 연결하면 진짜 모델이 답해요. 키는 이 브라우저에만 저장돼요.</li>' +
+      '</ul>';
+    wrap.querySelector('#welcomeAdd').addEventListener('click', function () { openSheet(null); });
+    return wrap;
+  }
+
+  function emptyExamples() {
+    var names = state.ais.map(function (a) { return '@' + a.name; });
+    var first = names[0] || '@이름';
+    var wrap = document.createElement('div');
+    wrap.className = 'empty';
+    wrap.innerHTML =
+      '<p>아직 대화가 없어요.<br>아래 예시를 누르면 바로 시험해 볼 수 있어요.</p>' +
+      '<div class="examples">' +
+        '<button class="example" type="button" data-example="내일 할 일 정리하고 순서를 짜 줘">내일 할 일 정리하고 순서를 짜 줘<em>모두에게 · 순서대로 답해요</em></button>' +
+        '<button class="example" type="button" data-example="' + esc(first) + ' 네가 잘하는 게 뭐야?">' + esc(first) + ' 네가 잘하는 게 뭐야?<em>한 명만 · 이름을 불러서 물어보기</em></button>' +
+        '<button class="example" type="button" data-example="이번 주에 할 일 중에 미룰 것부터 골라 줘">이번 주에 할 일 중에 미룰 것부터 골라 줘<em>모두에게 · 역할에 맞게 답해요</em></button>' +
+      '</div>';
+    var btns = wrap.querySelectorAll('.example');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].addEventListener('click', function () { send(this.getAttribute('data-example')); });
+    }
+    return wrap;
+  }
+
+  function noticeNode(m) {
+    var el = document.createElement('div');
+    el.className = 'notice';
+    el.textContent = m.text;
+    return el;
+  }
+
+  function msgNode(m) {
+    var row = document.createElement('article');
+    row.className = 'msg ' + (m.from === 'me' ? 'msg-me' : 'msg-ai');
+    row.setAttribute('data-id', m.id);
+
+    if (m.from !== 'me') {
+      var snap = m.ai || { glyph: 'AI', color: '#475569', name: 'AI', role: '', mode: 'sim' };
+      var av = document.createElement('div');
+      av.className = 'av msg-av';
+      av.style.background = snap.color;
+      av.textContent = snap.glyph;
+      row.appendChild(av);
+    }
+
+    var wrap = document.createElement('div');
+    wrap.className = 'bubble-wrap';
+
+    if (m.from !== 'me') {
+      var snap2 = m.ai || { name: 'AI', role: '', mode: 'sim', color: '#475569' };
+      var meta = document.createElement('div');
+      meta.className = 'msg-meta';
+      var metaHtml = '<b>' + esc(snap2.name) + '</b>';
+      if (snap2.role) metaHtml += '<span class="role" style="color:' + snap2.color + ';background:' + hexA(snap2.color, .11) + '">' + esc(snap2.role) + '</span>';
+      metaHtml += '<span class="mtag">' + (snap2.mode === 'api' ? 'API' : '시뮬레이션') + '</span>';
+      meta.innerHTML = metaHtml;
+      wrap.appendChild(meta);
+    }
+
+    var bubble = document.createElement('div');
+    bubble.className = 'bubble' + (m.error ? ' is-error' : '');
+    bubble.innerHTML = highlight(esc(m.text));
+    wrap.appendChild(bubble);
+
+    var foot = document.createElement('div');
+    foot.className = 'msg-foot';
+    var time = document.createElement('time');
+    time.textContent = fmtTime(m.ts);
+    foot.appendChild(time);
+    wrap.appendChild(foot);
+
+    row.appendChild(wrap);
+    return row;
+  }
+
+  function typingNode() {
+    var el = document.createElement('div');
+    el.className = 'typing';
+    el.setAttribute('role', 'status');
+    el.innerHTML =
+      '<span class="av ty-av" style="background:' + typingAi.color + '">' + esc(typingAi.glyph) + '</span>' +
+      '<span><b>' + esc(typingAi.name) + '</b> 답장 작성 중' +
+      '<span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></span>';
+    return el;
+  }
+
+  function renderTimeline(animateId) {
+    timeline.textContent = '';
+
+    var firstRun = !state.ais.length && !state.messages.length;
+    var composerCard = $('#composerCard');
+    if (composerCard) composerCard.hidden = firstRun;
+    var head = $('#timelineHead');
+    if (head) head.hidden = firstRun;
+
+    if (firstRun) {
+      timeline.appendChild(welcomeBlock());
+    } else if (!state.messages.length) {
+      timeline.appendChild(emptyExamples());
+    } else {
+      var lastDate = null;
+      for (var i = 0; i < state.messages.length; i++) {
+        var m = state.messages[i];
+        var key = dateKey(m.ts);
+        if (key !== lastDate) {
+          var d = document.createElement('div');
+          d.className = 'date';
+          d.textContent = fmtDate(m.ts);
+          timeline.appendChild(d);
+          lastDate = key;
+        }
+        var node = (m.from === 'notice') ? noticeNode(m) : msgNode(m);
+        if (animateId && m.id === animateId) node.classList.add('is-new');
+        timeline.appendChild(node);
+      }
+    }
+
+    if (typingAi) timeline.appendChild(typingNode());
+    countEl.textContent = String(state.messages.length);
+    renderLive();
+    scrollToEnd();
+    initialRender = false;
+  }
+
+  /* ===============================================================
+     7. 렌더 — AI 관리 · 설정
+  =============================================================== */
+  function renderMembers() {
+    var host = $('#memberList');
+    if (!state.ais.length) {
+      host.innerHTML =
+        '<div class="card" style="margin-top:12px">' +
+          '<h2>등록된 AI가 없어요</h2>' +
+          '<p class="card-sub" style="margin-bottom:0">위의 <b>+ 새 AI 추가하기</b>를 누르고 이름과 역할을 적으면 바로 방에 들어옵니다.</p>' +
+        '</div>';
+      return;
+    }
+
+    var html = '';
+    for (var i = 0; i < state.ais.length; i++) {
+      var a = state.ais[i];
+      var keySt = a.mode === 'api' ? (a.apiKey ? '키 저장됨' : '키 없음') : '키 불필요';
+      html +=
+        '<div class="member' + (a.muted ? ' is-muted' : '') + '" data-id="' + esc(a.id) + '">' +
+          '<div class="member-top">' +
+            '<div class="av" style="background:' + a.color + '">' + esc(a.glyph) + '</div>' +
+            '<div class="member-id">' +
+              '<p class="member-name">' + esc(a.name) +
+                '<span class="pill ' + (a.mode === 'api' ? 'api' : 'sim') + '">' + (a.mode === 'api' ? 'API' : '시뮬레이션') + '</span>' +
+                (a.muted ? '<span class="pill mute">음소거</span>' : '') +
+              '</p>' +
+              '<div class="member-role">' + (a.role ? esc(a.role) : '역할 미지정') + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<p class="member-desc' + (a.prompt ? '' : ' is-empty') + '">' + (a.prompt ? esc(a.prompt) : '지침이 비어 있어요. 수정에서 성격·말투·규칙을 적어 주세요.') + '</p>' +
+          '<div class="member-foot">' +
+            (a.mode === 'api' ? '<span>' + PROVIDERS[a.provider].label + '</span><span>' + esc(keySt) + '</span>' + (a.model ? '<span>' + esc(a.model) + '</span>' : '') : '<span>API 없이 동작</span>') +
+          '</div>' +
+          '<button class="talk" type="button" data-talk="' + esc(a.id) + '">' + esc(a.name) + '에게 1:1로 말 걸기</button>' +
+          '<div class="mrow">' +
+            '<button class="row-btn" type="button" data-edit="' + esc(a.id) + '">수정</button>' +
+            '<button class="row-btn ' + (a.muted ? 'wake' : '') + '" type="button" data-mute="' + esc(a.id) + '">' + (a.muted ? '다시 켜기' : '음소거') + '</button>' +
+            '<button class="row-btn danger" type="button" data-del="' + esc(a.id) + '">삭제</button>' +
+          '</div>' +
+        '</div>';
+    }
+    host.innerHTML = html;
+  }
+
+  function renderSettings() {
+    var st = $('#s-storage');
+    if (st) st.textContent = storageOK ? '자동 저장 중' : '저장할 수 없음';
+    var n = $('#s-ais');
+    if (n) n.textContent = state.ais.length + '개';
+    var mine = 0;
+    for (var i = 0; i < state.messages.length; i++) if (state.messages[i].from === 'me') mine++;
+    var t = $('#s-total');
+    var notes = 0;
+    for (var q = 0; q < state.messages.length; q++) if (state.messages[q].from === 'notice') notes++;
+    if (t) t.textContent = state.messages.length + '건 (나 ' + mine + ' · AI ' + (state.messages.length - mine - notes) + (notes ? ' · 안내 ' + notes : '') + ')';
+    var s = $('#s-saved');
+    if (s) s.textContent = state.savedAt ? fmtStamp(state.savedAt) : '-';
+
+    var apiHost = $('#apiList');
+    if (!apiHost) return;
+    var rows = '';
+    var apiAis = state.ais.filter(function (a) { return a.mode === 'api'; });
+    if (!apiAis.length) {
+      rows = '<div class="api-line"><span class="dot"></span><span>연결된 AI가 없어요. 모두 시뮬레이션으로 답합니다.</span></div>';
+    } else {
+      for (var j = 0; j < apiAis.length; j++) {
+        var a = apiAis[j];
+        var ready = !!(a.apiKey && a.model && a.baseUrl);
+        rows += '<div class="api-line">' +
+          '<span class="dot' + (ready ? ' on' : '') + '"></span>' +
+          '<span class="who">' + esc(a.name) + '</span>' +
+          '<span class="st">' + (ready ? '설정됨' : '설정 필요') + '</span>' +
+        '</div>';
+      }
+    }
+    apiHost.innerHTML = rows;
+  }
+
+  function renderAll() {
+    renderHero();
+    renderChips();
+    renderMembers();
+    renderSettings();
+    renderTimeline();
+  }
+
+  /* ===============================================================
+     8. 탭 · 대상
+  =============================================================== */
+  function setTarget(target) {
+    if (target !== 'all' && !byId(target)) target = 'all';
+    state.target = target;
+    var chips = chipsWrap.querySelectorAll('.chip');
+    for (var i = 0; i < chips.length; i++) {
+      var on = chips[i].getAttribute('data-target') === target;
+      chips[i].classList.toggle('is-active', on);
+      chips[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    save();
+  }
+
+  function setTab(name) {
+    var tabs = document.querySelectorAll('.tab');
+    for (var i = 0; i < tabs.length; i++) {
+      var on = tabs[i].getAttribute('data-tab') === name;
+      tabs[i].classList.toggle('is-active', on);
+      tabs[i].setAttribute('aria-selected', on ? 'true' : 'false');
+    }
+    var panels = document.querySelectorAll('.panel');
+    for (var j = 0; j < panels.length; j++) {
+      panels[j].hidden = panels[j].id !== 'panel-' + name;
+    }
+    if (name === 'settings') renderSettings();
+    if (name === 'members') renderMembers();
+  }
+
+  /* ===============================================================
+     9. AI 추가/수정 시트
+  =============================================================== */
+  var editingId = null;
+  var focusTimer = null;
+  var draftColor = PALETTE[0];
+  var draftMode = 'sim';
+  var glyphTouched = false;
+  var lastNameTyped = '';
+
+  var fName = $('#f-name');
+  var fRole = $('#f-role');
+  var fPrompt = $('#f-prompt');
+  var fGlyph = $('#f-glyph');
+  var fProvider = $('#f-provider');
+  var fModel = $('#f-model');
+  var fBase = $('#f-base');
+  var fKey = $('#f-key');
+  var avPreview = $('#avPreview');
+  var apiFields = $('#apiFields');
+
+
+  function buildSwatches() {
+    var host = $('#swatches');
+    var html = '';
+    for (var i = 0; i < PALETTE.length; i++) {
+      html += '<button class="swatch' + (PALETTE[i] === draftColor ? ' is-on' : '') + '" type="button" data-color="' + PALETTE[i] + '" style="background:' + PALETTE[i] + '" aria-label="색상 ' + PALETTE[i] + '" aria-pressed="' + (PALETTE[i] === draftColor) + '"></button>';
+    }
+    host.innerHTML = html;
+    avPreview.style.background = draftColor;
+  }
+
+  function updatePreview() {
+    var g = fGlyph.value.trim();
+    if (!g) g = firstGrapheme(fName.value) || 'AI';
+    avPreview.textContent = g;
+    avPreview.style.background = draftColor;
+  }
+
+  function setMode(mode) {
+    draftMode = mode === 'api' ? 'api' : 'sim';
+    var btns = document.querySelectorAll('.seg-btn');
+    for (var i = 0; i < btns.length; i++) {
+      var on = btns[i].getAttribute('data-mode') === draftMode;
+      btns[i].classList.toggle('is-active', on);
+      btns[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    apiFields.hidden = draftMode !== 'api';
+    $('#modeNote').textContent = draftMode === 'api'
+      ? '브라우저에서 바로 API를 호출해요. 키가 없으면 오류가 말풍선으로 표시됩니다.'
+      : 'API 키 없이도 입력한 이름·역할·지침을 반영해 답해요.';
+  }
+
+  function applyProviderDefaults(provider, reset) {
+    var p = PROVIDERS[provider] || PROVIDERS.openai;
+    if (reset) {
+      fBase.value = p.base;
+      fModel.value = p.model;
+    }
+    fModel.setAttribute('placeholder', p.model || '예: gpt-4o-mini');
+    fBase.setAttribute('placeholder', p.base || 'https://내주소/v1');
+  }
+
+  function openSheet(ai) {
+    editingId = ai ? ai.id : null;
+    $('#sheetTitle').textContent = ai ? 'AI 수정' : '새 AI 추가';
+    $('#sheetSave').textContent = ai ? '저장' : '추가하기';
+
+    fName.value = ai ? ai.name : '';
+    fRole.value = ai ? ai.role : '';
+    fPrompt.value = ai ? ai.prompt : '';
+    glyphTouched = !!(ai && ai.glyph);
+    fGlyph.value = ai ? ai.glyph : '';
+    draftColor = ai ? ai.color : PALETTE[state.ais.length % PALETTE.length];
+
+    fProvider.value = ai ? ai.provider : 'openai';
+    fModel.value = ai ? ai.model : '';
+    fBase.value = ai ? ai.baseUrl : '';
+    fKey.value = ai ? ai.apiKey : '';
+    if (!ai) applyProviderDefaults('openai', true);
+    else applyProviderDefaults(ai.provider, false);
+
+    $('#f-name-err').textContent = '이름을 먼저 적어 주세요.';
+    $('#f-name-err').hidden = true;
+    fName.classList.remove('is-bad');
+    fKey.type = 'password';
+    $('#keyEye').textContent = '보기';
+
+    setMode(ai ? ai.mode : 'sim');
+    buildSwatches();
+    updatePreview();
+
+    sheet.hidden = false;
+    document.body.classList.add('locked');
+    if (focusTimer) clearTimeout(focusTimer);
+    focusTimer = setTimeout(function () {
+      focusTimer = null;
+      var act = document.activeElement;
+      /* 사용자가 이미 다른 칸을 만지고 있으면 포커스를 빼앗지 않는다 */
+      if (act && act !== document.body && act.closest && act.closest('.sheet-body')) return;
+      try { fName.focus({ preventScroll: true }); } catch (e) { fName.focus(); }
+    }, 220);
+  }
+
+  function closeSheet() {
+    if (focusTimer) { clearTimeout(focusTimer); focusTimer = null; }
+    sheet.hidden = true;
+    document.body.classList.remove('locked');
+    editingId = null;
+  }
+
+  function saveSheet() {
+    var name = fName.value.trim().replace(/\s+/g, ' ');
+    if (!name) {
+      $('#f-name-err').hidden = false;
+      fName.classList.add('is-bad');
+      fName.focus();
+      return;
+    }
+    for (var i = 0; i < state.ais.length; i++) {
+      if (state.ais[i].name.toLowerCase() === name.toLowerCase() && state.ais[i].id !== editingId) {
+        $('#f-name-err').textContent = '같은 이름의 AI가 이미 있어요. 다른 이름으로 적어 주세요.';
+        $('#f-name-err').hidden = false;
+        fName.classList.add('is-bad');
+        fName.focus();
+        return;
+      }
+    }
+
+    if (draftMode === 'api') {
+      var missing = [];
+      if (!fModel.value.trim()) missing.push('모델명');
+      if (!(fBase.value.trim() || PROVIDERS[fProvider.value].base)) missing.push('Base URL');
+      if (!fKey.value.trim()) missing.push('API Key');
+      if (missing.length) {
+        toast('실제 API는 ' + missing.join(' · ') + '이 필요해요');
+        if (!fKey.value.trim()) { try { fKey.focus(); } catch (e) {} }
+        return;
+      }
+    }
+
+    var data = {
+      name: name,
+      role: fRole.value.trim().slice(0, 60),
+      prompt: fPrompt.value.trim().slice(0, 2000),
+      color: draftColor,
+      glyph: fGlyph.value.trim() || firstGrapheme(name),
+      mode: draftMode,
+      provider: fProvider.value,
+      model: fModel.value.trim(),
+      baseUrl: (fBase.value.trim() || PROVIDERS[fProvider.value].base),
+      apiKey: fKey.value.trim(),
+      muted: false
+    };
+
+    if (editingId) {
+      var ai = byId(editingId);
+      if (!ai) { closeSheet(); return; }
+      var wasMuted = ai.muted;
+      for (var k in data) if (Object.prototype.hasOwnProperty.call(data, k)) ai[k] = data[k];
+      ai.muted = wasMuted;
+      closeSheet();
+      renderAll();
+      save();
+      toast(ai.name + ' AI 정보를 저장했어요');
+      return;
+    }
+
+    var created = cleanAi({
+      id: uid(),
+      name: data.name,
+      role: data.role,
+      prompt: data.prompt,
+      color: data.color,
+      glyph: data.glyph,
+      mode: data.mode,
+      provider: data.provider,
+      model: data.model,
+      baseUrl: data.baseUrl,
+      apiKey: data.apiKey,
+      muted: false,
+      createdAt: Date.now()
+    });
+    if (!created) { toast('AI를 추가하지 못했어요'); return; }
+
+    state.ais.push(created);
+    state.messages.push({
+      id: uid(),
+      from: 'notice',
+      text: '“' + created.name + '” AI가 컨트롤타워에 합류했어요',
+      ts: Date.now()
+    });
+    state.messages.push({
+      id: uid(),
+      from: created.id,
+      ai: { name: created.name, glyph: created.glyph, color: created.color, role: created.role, mode: created.mode },
+      text: greeting(created),
+      ts: Date.now() + 1
+    });
+
+    closeSheet();
+    setTab('chat');
+    renderAll();
+    save();
+    toast(created.name + ' AI를 불러왔어요');
+  }
+
+  function greeting(ai) {
+    var role = ai.role ? ai.role + ' 쪽을 맡을게요. ' : '';
+    var firstLine = '';
+    if (ai.prompt) {
+      var parts = ai.prompt.split(/[\n.。!?]/).map(function (s) { return s.trim(); }).filter(function (s) { return s.length > 4; });
+      if (parts.length) firstLine = '지침으로 적어 두신 “' + clampText(parts[0], 34) + '” 지킬게요. ';
+    }
+    return '안녕하세요, ' + ai.name + '입니다. ' + role + firstLine + '무엇부터 할까요? 편하게 시켜 주세요.';
+  }
+
+  /* ===============================================================
+     10. 모달
+  =============================================================== */
+  function confirmBox(title, desc, okLabel, fn) {
+    $('#modal-title').textContent = title;
+    $('#modal-desc').textContent = desc;
+    $('#modal-ok').textContent = okLabel || '확인';
+    confirmAction = fn;
+    modal.hidden = false;
+    $('#modal-cancel').focus();
+  }
+  function closeModal() {
+    modal.hidden = true;
+    confirmAction = null;
+  }
+
+  /* ===============================================================
+     11. 시뮬레이션 엔진
+  =============================================================== */
+  var ARCH = [
+    { id: 'code', kw: ['코드', '개발', '프로그래', '엔지니어', '리팩터', '버그', '디버그', '프론트', '백엔드', '서버', '자바스크립트', '파이썬', '깃', 'api', '배포'] },
+    { id: 'review', kw: ['리뷰', '검토', '검수', '교정', 'qa', '테스트', '품질', '감수', '피드백'] },
+    { id: 'research', kw: ['조사', '리서치', '분석', '자료', '데이터', '통계', '시장', '트렌드', '벤치마크', '사례'] },
+    { id: 'plan', kw: ['기획', '전략', '총괄', '계획', '로드맵', '우선순위', 'pm', '매니저', '프로젝트', '일정 관리'] },
+    { id: 'write', kw: ['글', '작성', '카피', '블로그', '문서', '에디터', '작가', '스토리', '번역', '요약', '제목', '문구'] },
+    { id: 'design', kw: ['디자인', 'ui', 'ux', '브랜드', '로고', '일러스트', '색감', '레이아웃', '화면 구성'] },
+    { id: 'money', kw: ['예산', '회계', '세금', '금융', '투자', '가격', '구매', '쇼핑', '비용', '수익', '원가'] },
+    { id: 'coach', kw: ['상담', '코치', '멘토', '조언', '심리', '운동', '건강', '루틴', '습관', '동기'] },
+    { id: 'ops', kw: ['일정', '운영', '예약', '전화', '연락', '처리', '비서', '행정', '배송', '주문'] },
+    { id: 'teach', kw: ['교육', '강의', '튜터', '설명', '학습', '공부', '가르치'] }
+  ];
+
+  var TOPICS = [
+    { id: 'help', kw: ['뭐 할 수', '무엇을 할', '가능한', '소개해', '도와줄', '네가 뭘', '어떤 걸', '잘하는'] },
+    { id: 'weather', kw: ['날씨', '비', '눈', '기온', '우산', '미세먼지', '예보', '태풍', '더위', '추위'] },
+    { id: 'schedule', kw: ['일정', '약속', '시간', '날짜', '회의', '출근', '근무', '마감', '언제'] },
+    { id: 'money', kw: ['돈', '가격', '예산', '비용', '구매', '할인', '최저가', '결제', '지출', '수익'] },
+    { id: 'code', kw: ['코드', '버그', '에러', '개발', '서버', '배포', '함수', '스크립트', '앱', '웹'] },
+    { id: 'writing', kw: ['글', '문장', '카피', '블로그', '제목', '원고', '소개문', '공지'] },
+    { id: 'health', kw: ['건강', '운동', '병원', '약', '수면', '식단', '다이어트', '통증'] },
+    { id: 'study', kw: ['공부', '학습', '시험', '강의', '자격증', '퀴즈'] },
+    { id: 'daily', kw: ['집', '청소', '장보기', '요리', '사료', '강아지', '반려', '여행'] },
+    { id: 'work', kw: ['일', '업무', '보고', '프로젝트', '회사', '팀', '계약', '거래처'] }
+  ];
+
+  var OPENERS = {
+    code: ['어디서 막히는지부터 좁혀 볼게요.', '코드로 옮기기 전에 조건을 한 번 맞춰 볼게요.', '작은 단위로 나눠서 하나씩 확인하겠습니다.'],
+    review: ['읽어 보고 걸리는 부분부터 짚어 드릴게요.', '기준을 먼저 세우고 살펴보겠습니다.', '고칠 것과 그냥 둘 것을 나눠서 볼게요.'],
+    research: ['확인할 곳부터 순서대로 정리해 볼게요.', '자료를 모아서 확실한 것과 추정을 나눠 보겠습니다.', '비교 기준을 먼저 맞추고 찾아볼게요.'],
+    plan: ['할 일을 순서대로 늘어놓고 시작할게요.', '이번에 정할 것과 미룰 것을 나눠 보겠습니다.', '큰 그림부터 잡고 세부로 내려갈게요.'],
+    write: ['문장을 짧게 다듬는 쪽으로 가 볼게요.', '누가 읽을 글인지부터 정하고 쓰겠습니다.', '처음과 끝을 먼저 잡고 가운데를 채우겠습니다.'],
+    design: ['쓰는 사람 입장에서 화면을 다시 볼게요.', '색과 간격부터 정리하고 배치를 보겠습니다.', '중요한 것 하나가 눈에 먼저 들어오게 다듬을게요.'],
+    money: ['숫자를 먼저 맞춰 볼게요.', '나가는 돈과 들어오는 돈을 나눠서 보겠습니다.', '이번에 쓸 돈과 나중에 쓸 돈을 구분해 볼게요.'],
+    coach: ['지금 상태를 먼저 확인하고 시작할게요.', '무리하지 않는 선에서 순서를 잡아 보겠습니다.', '작게 시작해서 이어 갈 수 있게 짜 볼게요.'],
+    ops: ['바로 처리할 수 있는 것부터 볼게요.', '누구에게 언제 연락할지부터 정리하겠습니다.', '확인해야 할 곳을 순서대로 짚어 볼게요.'],
+    teach: ['쉬운 말로 차근차근 설명해 드릴게요.', '예를 하나 들어서 설명하는 게 좋겠습니다.', '헷갈리는 지점부터 하나씩 풀어 볼게요.'],
+    general: ['말씀하신 내용으로 정리해 볼게요.', '차근차근 살펴보겠습니다.', '무엇이 필요한지부터 맞춰 볼게요.']
+  };
+
+  var CORE = {
+    code: ['작게 나눠서 하나씩 확인하면 원인을 놓치지 않아요.', '예외 처리와 입력 검증이 빠지면 나중에 같은 문제가 다시 나옵니다.', '원인을 찾을 때는 바꾼 것을 하나씩 되돌려 보는 게 제일 빠릅니다.'],
+    review: ['꼭 고쳐야 하는 것만 먼저 짚어 드리고, 나머지는 의견으로 남길게요.', '판단 기준을 먼저 적어 두면 리뷰가 짧아지고 다시 볼 일도 줄어요.', '같은 문제가 반복되는 곳을 우선해서 보겠습니다.'],
+    research: ['공식 자료와 후기를 나눠서 보면 판단이 흔들리지 않아요.', '숫자가 있는 자료를 먼저 보고, 없는 부분은 확인 필요로 표시하겠습니다.', '세 곳 이상에서 같은 얘기가 나오는지 확인하는 게 좋아요.'],
+    plan: ['이번 주에 정할 것과 다음으로 미룰 것을 나누면 훨씬 가벼워져요.', '결정이 필요한 지점에 날짜를 붙여 두면 일이 굴러갑니다.', '돈과 시간이 많이 드는 일은 뒤로 모으는 게 좋아요.'],
+    write: ['첫 문장에서 결론을 말하면 읽는 사람이 덜 헤매요.', '문장을 짧게 끊고 같은 말은 한 번만 쓰는 게 좋아요.', '읽는 사람이 궁금해할 순서대로 쓰면 자연스러워집니다.'],
+    design: ['여백이 부족하면 좋은 요소도 답답해 보여요.', '눈에 먼저 들어와야 하는 건 하나로 정하는 게 좋아요.', '색은 두세 개로 줄이면 훨씬 정돈돼 보입니다.'],
+    money: ['지금 값과 앞으로 나갈 돈을 같이 봐야 판단이 서요.', '한 번에 사는 것과 나눠 사는 것을 같은 기준으로 비교해 볼게요.', '급하지 않은 지출은 다음 주기로 넘기면 흔들리지 않아요.'],
+    coach: ['작게 시작해서 며칠 해 보고 조정하는 쪽이 오래갑니다.', '몸이 먼저 힘들면 오래 못 가니 강도를 낮추는 게 좋아요.', '무엇을 줄일지 정하는 게 무엇을 더 할지보다 중요해요.'],
+    ops: ['누가 결정하고 누가 확인하는지 정해 두면 빨라져요.', '연락은 한 번에 필요한 것만 묶어서 하는 게 좋아요.', '시간이 정해지면 준비물과 이동 시간을 붙여 두겠습니다.'],
+    teach: ['한 번에 다 설명하기보다 한 조각씩 확인하는 게 남아요.', '예를 하나 들고 그 예를 바꿔 보면 이해가 빨라요.', '헷갈리는 지점을 먼저 짚으면 나머지는 쉽게 풀립니다.'],
+    general: ['결론과 다음 할 일을 한 줄로 적어 두면 다시 볼 때 편해요.', '지금 정할 수 있는 것과 확인이 필요한 것을 나눠 볼게요.', '크게 보면 두 갈래로 정리됩니다.']
+  };
+
+  var FOCUS = {
+    weather: [
+      '“{s}” 쪽은 예보를 두 곳 이상 맞춰 봐야 실제와 가까워요.',
+      '“{s}” 건은 시간대별로 나눠 봐야 아침과 저녁이 다르게 나옵니다.',
+      '“{s}” 때는 비 소식과 기온 차를 같이 봐야 준비가 맞아요.'
+    ],
+    schedule: [
+      '“{s}” 건은 시간을 먼저 확정하고 준비물을 붙이는 순서로 가면 빠뜨리지 않아요.',
+      '“{s}” 건은 앞뒤에 이동 시간을 넣어야 실제로 무리가 없어요.',
+      '“{s}” 건은 확정된 것과 아직 물어봐야 하는 것을 나눠야 보여요.'
+    ],
+    money: [
+      '“{s}” 건은 지금 값과 앞으로 나갈 돈을 같이 봐야 판단이 서요.',
+      '“{s}” 건은 한 번에 쓰는 돈과 나눠 쓰는 돈을 같은 기준으로 놓고 봐야 해요.',
+      '“{s}” 건은 한도 금액을 먼저 정해 두면 고민이 줄어듭니다.'
+    ],
+    work: [
+      '“{s}” 건은 누가 결정하고 누가 확인하는지를 먼저 정해 두면 빨라져요.',
+      '“{s}” 건은 마감이 정해져야 나머지 순서가 잡힙니다.',
+      '“{s}” 건은 지금 하는 일과 미룰 일을 나눠 보는 게 좋아요.'
+    ],
+    code: [
+      '“{s}” 쪽은 재현되는 조건을 적어 두면 절반은 해결된 셈이에요.',
+      '“{s}” 건은 바꾸는 부분을 한 번에 하나로 좁혀야 원인을 알 수 있어요.',
+      '“{s}” 건은 지금 되는 동작을 먼저 확인해 두면 안전합니다.'
+    ],
+    writing: [
+      '“{s}” 글은 첫 문장에서 결론을 말하면 읽는 사람이 덜 헤매요.',
+      '“{s}” 건은 누구에게 보여줄 글인지 정해야 말투가 잡혀요.',
+      '“{s}” 건은 길이를 먼저 정하고 쓰면 훨씬 빨리 끝납니다.'
+    ],
+    health: [
+      '“{s}” 건은 무리하지 않는 범위를 먼저 정하는 게 안전해요.',
+      '“{s}” 건은 하루에 얼마나 할 수 있는지부터 정해야 오래 갑니다.',
+      '“{s}” 건은 몸 상태를 보고 강도를 낮추는 쪽이 낫습니다.'
+    ],
+    study: [
+      '“{s}” 쪽은 한 번에 다 하기보다 작은 단위로 나눠 확인하는 게 남아요.',
+      '“{s}” 건은 아는 부분과 모르는 부분을 먼저 나눠 보세요.',
+      '“{s}” 건은 예를 하나 잡고 거기서 시작하면 이해가 빨라요.'
+    ],
+    daily: [
+      '“{s}” 건은 미리 준비할 것과 당일에 할 것을 나누면 편해요.',
+      '“{s}” 건은 순서만 정해 두면 대부분 금방 끝납니다.',
+      '“{s}” 건은 필요한 것이 다 있는지부터 확인하는 게 좋아요.'
+    ],
+    help: [
+      '제가 맡은 건 {role} 쪽이에요.',
+      '저는 {role} 일을 합니다.',
+      '{role} 쪽이 제 자리예요.'
+    ],
+    general: [
+      '“{s}” 건은 결론과 다음 할 일을 한 줄로 적어 두면 좋아요.',
+      '“{s}” 건은 지금 할 수 있는 것과 확인이 필요한 것을 나눠 보면 정리가 됩니다.',
+      '“{s}” 건은 제가 먼저 순서를 잡아 볼게요.'
+    ]
+  };
+
+  var CLOSERS = {
+    code: ['지금 쓰는 환경과 원하는 동작을 알려 주시면 그 기준으로 다음 단계를 준비할게요.', '어디까지 손대도 되는지 정해 주시면 그 범위 안에서 정리해 올릴게요.'],
+    review: ['언제까지 봐야 하는지 알려 주시면 그 순서로 훑어 드릴게요.', '특히 걱정되는 부분이 있으면 알려 주세요. 그쪽부터 보겠습니다.'],
+    research: ['궁금한 범위를 좁혀 주시면 더 정확하게 찾아올게요.', '확인이 급한 항목이 있으면 알려 주세요. 그건 먼저 보겠습니다.'],
+    plan: ['돈이 드는 시점과 사람이 필요한 시점만 알려 주시면 바로 맞춰 볼게요.', '이번 주에 꼭 해야 하는 게 있으면 알려 주세요. 그걸 맨 앞에 두겠습니다.'],
+    write: ['누구에게 보여줄 글인지 알려 주시면 말투를 그에 맞출게요.', '이 문장만은 꼭 살리고 싶은 게 있으면 알려 주세요.'],
+    design: ['지금 쓰는 화면이 있으면 보여 주세요. 그걸 기준으로 다듬을게요.', '제일 중요한 한 가지만 알려 주시면 나머지는 맞춰 가겠습니다.'],
+    money: ['한도 금액이 있으면 알려 주세요. 그 안에서 순서를 다시 짜겠습니다.', '언제까지 써야 하는 돈인지 알려 주시면 그에 맞춰 볼게요.'],
+    coach: ['요즘 어떤 때 가장 힘든지 알려 주시면 거기부터 풀어 볼게요.', '며칠에 한 번 할 수 있는지 알려 주시면 그 주기로 짜겠습니다.'],
+    ops: ['연락할 곳과 시간대만 알려 주시면 제가 순서대로 처리할게요.', '이번 주 안에 끝내야 하는 게 있으면 먼저 짚어 주세요.'],
+    teach: ['어디까지 아는지 알려 주시면 그 위에서 설명할게요.', '이해가 안 되는 부분을 알려 주시면 그 부분만 다시 풀어 드릴게요.'],
+    general: ['제가 먼저 정리해서 올릴 테니, 아닌 부분만 짚어 주세요.', '더 필요한 정보가 있으면 하나만 알려 주세요. 그걸로 바로 이어 갈게요.']
+  };
+
+  var BULLETS = {
+    weather: ['예보 두 곳 확인', '이동 시간 15분 더 잡기', '우산·겉옷 챙길 날 표시'],
+    schedule: ['시간 확정', '준비물 목록', '하루 전 알림'],
+    money: ['쓸 돈과 나중에 쓸 돈 나누기', '한도 정하기', '다음 주기에 넘길 것 정하기'],
+    work: ['결정할 사람', '확인할 사람', '마감 시각'],
+    code: ['재현 조건 적기', '한 번에 하나씩 바꾸기', '바뀐 곳 확인'],
+    writing: ['첫 문장에 결론', '문장 짧게', '같은 말 한 번만'],
+    health: ['무리 안 하는 범위', '며칠 해 보고 조정', '힘들면 낮추기'],
+    study: ['한 조각씩 나누기', '예로 확인하기', '헷갈린 곳 표시'],
+    daily: ['미리 준비', '당일에 할 일', '필요한 것 체크'],
+    help: ['이름·역할 정리', '지침 적기', 'API로 연결'],
+    general: ['결론 한 줄', '다음 할 일', '확인할 것']
+  };
+
+  var EMOJI = {
+    code: '🛠️', review: '🔍', research: '📊', plan: '🧭', write: '✍️',
+    design: '🎨', money: '💰', coach: '🌱', ops: '📌', teach: '📚', general: '🙂'
+  };
+
+  function detectArchetype(ai) {
+    var hay = ((ai.role || '') + ' ' + (ai.prompt || '') + ' ' + (ai.name || '')).toLowerCase();
+    var best = { id: 'general', score: 0 };
+    for (var i = 0; i < ARCH.length; i++) {
+      var score = 0;
+      for (var j = 0; j < ARCH[i].kw.length; j++) {
+        var k = ARCH[i].kw[j];
+        var idx = hay.indexOf(k);
+        if (idx !== -1) score += (k.length > 1 ? 2 : 1) + (idx < 12 ? 1 : 0);
+      }
+      if (score > best.score) best = { id: ARCH[i].id, score: score };
+    }
+    return best.id;
+  }
+
+  function detectTopic(text) {
+    var s = String(text).toLowerCase();
+    var best = { id: 'general', score: 0 };
+    for (var i = 0; i < TOPICS.length; i++) {
+      var score = 0;
+      for (var j = 0; j < TOPICS[i].kw.length; j++) {
+        var k = TOPICS[i].kw[j];
+        if (k && s.indexOf(k) !== -1) score += (k.length > 1 ? 2 : 1);
+      }
+      if (score > best.score) best = { id: TOPICS[i].id, score: score };
+    }
+    /* '도와줄' 같은 애매한 표현은 질문 형태일 때만 도움말로 */
+    if (best.id === 'help' && !/\?|뭐|무엇|소개|알려/.test(s)) best = { id: 'general', score: 0 };
+    return best.id;
+  }
+
+  function detectStyle(ai) {
+    var p = (ai.prompt || '') + ' ' + (ai.role || '');
+    return {
+      short: /짧게|간결|한 ?줄|세 ?줄|3줄|두 ?줄|간단히|핵심만/.test(p),
+      bullets: /목록|리스트|불릿|체크리스트|항목별|나눠서 정리/.test(p),
+      table: /표로|표를|표가|비교표|테이블|정리표|표 ?자주|표를 ?써/.test(p),
+      evidence: /근거|출처|인용|자료를 붙|링크/.test(p),
+      emoji: /이모지|이모티콘|emoji/i.test(p)
+    };
+  }
+
+  /* 이 역할이 자연스럽게 다루는 주제. 벗어나면 일반 문장으로 답한다 */
+  var ARCH_TOPICS = {
+    code: ['code', 'work', 'study', 'general'],
+    review: ['code', 'work', 'writing', 'general'],
+    research: ['weather', 'money', 'work', 'study', 'general'],
+    plan: ['work', 'schedule', 'money', 'general'],
+    write: ['writing', 'work', 'general'],
+    design: ['writing', 'work', 'general'],
+    money: ['money', 'work', 'daily', 'general'],
+    coach: ['health', 'schedule', 'study', 'general'],
+    ops: ['schedule', 'daily', 'work', 'general'],
+    teach: ['study', 'general']
+  };
+
+  var lastSim = {};
+
+  function simReply(ai, userText, prevAi, brief) {
+    var topic = detectTopic(userText);
+    var arch = detectArchetype(ai);
+    var style = detectStyle(ai);
+    var snippet = clampText(userText, 26);
+    var role = (ai.role || '').trim();
+
+    var fits = !ARCH_TOPICS[arch] || ARCH_TOPICS[arch].indexOf(topic) !== -1;
+    var opener = pick(OPENERS[arch] || OPENERS.general);
+    var core = pick((fits ? (CORE[arch] || CORE.general) : CORE.general));
+    var closer = pick((fits ? (CLOSERS[arch] || CLOSERS.general) : CLOSERS.general));
+
+    var focus = pick(FOCUS[topic] || FOCUS.general)
+      .replace(/\{s\}/g, snippet || '이번 일')
+      .replace(/\{role\}/g, role || '맡은 일');
+
+    var lead = '';
+    if (topic === 'help') {
+      lead = '';
+    } else if (prevAi) {
+      lead = pick([
+        prevAi.name + ' 님 얘기에 한 가지만 더하면, ',
+        prevAi.name + ' 님이 정리한 방향에서 조금만 더 가면, ',
+        prevAi.name + ' 님 말에 덧붙여서, '
+      ]);
+    } else if (role && /^[가-힣·\s]{2,12}$/.test(role) && Math.random() < 0.4) {
+      lead = role + ' 쪽에서 보면, ';
+    }
+
+    var body;
+    if (topic === 'help') {
+      var cap = role ? role + ' 일을 맡고 있어요.' : '아직 역할이 비어 있어요. 수정에서 역할을 적어 주시면 그에 맞게 답할게요.';
+      var gline = ai.prompt ? ' 지침으로는 “' + clampText(ai.prompt.split(/[\n.。!?]/)[0] || ai.prompt, 40) + '”를 지키고 있습니다.' : '';
+      body = lead + cap + gline + ' 편하게 시키시면 제 역할에 맞춰 답할게요.';
+    } else if (brief) {
+      body = lead + focus + (style.short ? '' : ' ' + core);
+    } else if (style.short) {
+      body = lead + focus + ' ' + core;
+    } else {
+      body = lead + opener + ' ' + focus + ' ' + core + ' ' + closer;
+    }
+
+    if (!style.short && !brief && topic !== 'help') {
+      var items = BULLETS[topic] || BULLETS.general;
+      if (style.table) {
+        body += '\n\n정리표\n· ' + items[0] + '  —  먼저 확인\n· ' + items[1] + '  —  이번에\n· ' + items[2] + '  —  다음에';
+      } else if (style.bullets) {
+        body += '\n\n· ' + items[0] + '\n· ' + items[1] + '\n· ' + items[2];
+      }
+      if (style.evidence) {
+        body += '\n\n근거는 공식 안내 → 최근 후기 → 담당자 확인 순서로 붙여 둘게요.';
+      }
+    }
+
+    if (style.emoji && !style.short && !brief) body += ' ' + (EMOJI[arch] || EMOJI.general);
+
+    /* 같은 문장이 연달아 나오지 않게 */
+    if (lastSim[ai.id] === body) {
+      body = body.replace(/^네, /, '') + ' 한 번 더 확인해 볼게요.';
+    }
+    body = body.replace(/\s+$/, '');
+    lastSim[ai.id] = body;
+    return body;
+  }
+
+  /* ===============================================================
+     12. 실제 API
+  =============================================================== */
+  function joinUrl(base, path) {
+    var b = String(base || '').replace(/\/+$/, '');
+    return b + path;
+  }
+
+  function systemPrompt(ai) {
+    var lines = [];
+    lines.push('너는 "' + ai.name + '"라는 이름의 AI다.');
+    if (ai.role) lines.push('역할: ' + ai.role);
+    if (ai.prompt) lines.push('지침: ' + ai.prompt);
+    lines.push('지금은 사용자의 AI 컨트롤타워 채팅방에서 다른 AI들과 함께 답하고 있다.');
+    lines.push('한국어로, 자기 역할에 맞게, 군더더기 없이 답한다. 모르는 것은 모른다고 말한다.');
+    return lines.join('\n');
+  }
+
+  function buildContext(ai, uptoIndex) {
+    var msgs = [];
+    var start = Math.max(0, uptoIndex - 12);
+    for (var i = start; i < uptoIndex; i++) {
+      var m = state.messages[i];
+      if (!m || m.from === 'notice' || m.error) continue;
+      if (m.from === 'me') {
+        msgs.push({ role: 'user', content: m.text });
+      } else if (m.from === ai.id) {
+        msgs.push({ role: 'assistant', content: m.text });
+      } else {
+        var nm = (m.ai && m.ai.name) || '다른 AI';
+        msgs.push({ role: 'user', content: '[' + nm + '] ' + m.text });
+      }
+    }
+    /* 첫 메시지는 user, 같은 역할은 하나로 합친다 (Anthropic·Gemini 규칙) */
+    while (msgs.length && msgs[0].role !== 'user') msgs.shift();
+    var merged = [];
+    for (var j = 0; j < msgs.length; j++) {
+      var last = merged[merged.length - 1];
+      if (last && last.role === msgs[j].role) last.content += '\n\n' + msgs[j].content;
+      else merged.push({ role: msgs[j].role, content: msgs[j].content });
+    }
+    return merged;
+  }
+
+  function apiError(status, detail) {
+    var e = new Error(detail || ('HTTP ' + status));
+    e.status = status;
+    return e;
+  }
+
+  async function callApi(ai, uptoIndex) {
+    var provider = ai.provider;
+    var base = ai.baseUrl || PROVIDERS[provider].base;
+    var model = ai.model;
+    if (!model) throw apiError(0, '모델명이 비어 있어요. 수정에서 모델명을 적어 주세요.');
+    if (!ai.apiKey) throw apiError(0, 'API 키가 비어 있어요. 수정에서 키를 넣어 주세요.');
+
+    var ctrl = ('AbortController' in window) ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 60000) : null;
+    var headers = { 'Content-Type': 'application/json' };
+    var url, body;
+
+    var ctx = buildContext(ai, uptoIndex);
+    if (!ctx.length) ctx = [{ role: 'user', content: '(대화 없음)' }];
+
+    if (provider === 'anthropic') {
+      url = joinUrl(base, '/messages');
+      headers['x-api-key'] = ai.apiKey;
+      headers['anthropic-version'] = '2023-06-01';
+      headers['anthropic-dangerous-direct-browser-access'] = 'true';
+      body = {
+        model: model,
+        max_tokens: 1024,
+        system: systemPrompt(ai),
+        messages: ctx
+      };
+    } else if (provider === 'gemini') {
+      url = joinUrl(base, '/models/' + encodeURIComponent(model) + ':generateContent') + '?key=' + encodeURIComponent(ai.apiKey);
+      body = {
+        systemInstruction: { parts: [{ text: systemPrompt(ai) }] },
+        contents: ctx.map(function (m) {
+          return { role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] };
+        }),
+        generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
+      };
+    } else {
+      var p = '/chat/completions';
+      if (/\/chat\/completions\/?$/.test(base)) {
+        url = base.replace(/\/+$/, '');
+      } else {
+        url = joinUrl(base, p);
+      }
+      headers['Authorization'] = 'Bearer ' + ai.apiKey;
+      body = {
+        model: model,
+        messages: [{ role: 'system', content: systemPrompt(ai) }].concat(ctx),
+        temperature: 0.7,
+        max_tokens: 1024
+      };
+    }
+
+    var res;
+    try {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(body),
+        signal: ctrl ? ctrl.signal : undefined
+      });
+    } catch (err) {
+      if (timer) clearTimeout(timer);
+      if (err && err.name === 'AbortError') throw apiError(0, '응답이 60초 안에 오지 않았어요. 네트워크나 제공자 상태를 확인해 주세요.');
+      throw apiError(0, '요청이 막혔어요. 네트워크 또는 CORS 문제일 수 있어요. (브라우저에서 직접 호출하는 방식이라 제공자가 CORS를 열어야 합니다)');
+    }
+    if (timer) clearTimeout(timer);
+
+    var data = null;
+    var rawText = '';
+    try {
+      rawText = await res.text();
+      data = rawText ? JSON.parse(rawText) : null;
+    } catch (e) { data = null; }
+
+    if (!res.ok) {
+      var msg = '';
+      if (data && data.error) msg = data.error.message || data.error.type || '';
+      if (!msg) msg = rawText ? rawText.slice(0, 160) : '';
+      if (res.status === 401 || res.status === 403) {
+        throw apiError(res.status, 'API 키가 거부됐어요 (' + res.status + '). 키를 다시 확인해 주세요.' + (msg ? ' · ' + msg : ''));
+      }
+      if (res.status === 404) {
+        throw apiError(res.status, '모델이나 주소를 찾지 못했어요 (404). 모델명과 Base URL을 확인해 주세요.' + (msg ? ' · ' + msg : ''));
+      }
+      if (res.status === 429) {
+        throw apiError(res.status, '요청 한도를 넘었어요 (429). 잠시 뒤에 다시 보내 주세요.' + (msg ? ' · ' + msg : ''));
+      }
+      throw apiError(res.status, 'API가 오류를 돌려줬어요 (' + res.status + ').' + (msg ? ' · ' + msg : ''));
+    }
+
+    var text = '';
+    if (provider === 'anthropic') {
+      if (data && Array.isArray(data.content)) {
+        text = data.content.map(function (c) { return c && c.text ? c.text : ''; }).join('\n').trim();
+      }
+    } else if (provider === 'gemini') {
+      if (data && data.candidates && data.candidates[0] && data.candidates[0].content && Array.isArray(data.candidates[0].content.parts)) {
+        text = data.candidates[0].content.parts.map(function (p) { return p && p.text ? p.text : ''; }).join('').trim();
+      }
+    } else {
+      if (data && data.choices && data.choices[0]) {
+        var c0 = data.choices[0];
+        if (c0.message) {
+          if (typeof c0.message.content === 'string') text = c0.message.content;
+          else if (Array.isArray(c0.message.content)) {
+            text = c0.message.content.map(function (p) { return (p && (p.text || p.content)) || ''; }).join('').trim();
+          }
+        } else if (typeof c0.text === 'string') {
+          text = c0.text;
+        }
+      }
+    }
+
+    if (!text) {
+      var hint = (data && data.error && data.error.message) ? data.error.message : '응답 본문에서 답을 찾지 못했어요.';
+      throw apiError(res.status, hint);
+    }
+    return text;
+  }
+
+  /* ===============================================================
+     13. 전송 · 응답
+  =============================================================== */
+  function planResponders(text, target) {
+    var mentioned = findMentions(text);
+    var list = [];
+    if (mentioned.length) {
+      list = mentioned.map(byId).filter(Boolean);
+    } else if (target === 'all') {
+      list = activeAis();
+    } else {
+      var t = byId(target);
+      if (t) list = [t];
+    }
+    return list;
+  }
+
+  function addAiMessage(ai, text, error) {
+    state.messages.push({
+      id: uid(),
+      from: ai.id,
+      ai: { name: ai.name, glyph: ai.glyph, color: ai.color, role: ai.role, mode: ai.mode },
+      text: text,
+      ts: Date.now(),
+      error: !!error
+    });
+    save();
+    renderTimeline(state.messages[state.messages.length - 1].id);
+  }
+
+  function setTyping(ai) {
+    typingAi = ai;
+    renderTimeline();
+  }
+
+  async function respond(userMsg, target) {
+    var list = planResponders(userMsg.text, target);
+    if (!list.length) {
+      if (state.ais.length) toast('답장할 AI가 없어요. AI 관리에서 음소거를 풀어 주세요.');
+      else toast('먼저 AI를 추가해 주세요');
+      return;
+    }
+
+    var prev = null;
+    var brief = list.length > 2;
+    for (var i = 0; i < list.length; i++) {
+      var ai = list[i];
+      if (!byId(ai.id)) continue;
+
+      setTyping(ai);
+      if (ai.mode === 'api') {
+        try {
+          var reply = await callApi(ai, state.messages.length);
+          typingAi = null;
+          addAiMessage(ai, reply, false);
+        } catch (err) {
+          typingAi = null;
+          var msgText = (err && err.message) ? err.message : '알 수 없는 오류가 났어요.';
+          addAiMessage(ai, '연결하지 못했어요. ' + msgText, true);
+          toast(ai.name + ' API 연결 실패');
+        }
+        await sleep(200);
+      } else {
+        await sleep(700 + Math.random() * 1300);
+        typingAi = null;
+        addAiMessage(ai, simReply(ai, userMsg.text, prev, brief), false);
+        await sleep(160);
+      }
+      prev = { name: ai.name };
+    }
+    typingAi = null;
+    renderTimeline();
+  }
+
+  var queue = Promise.resolve();
+  function enqueue(fn) {
+    queue = queue.then(fn).catch(function (err) {
+      typingAi = null;
+      if (window.console) console.error(err);
+      renderTimeline();
+    });
+  }
+
+  function send(textArg) {
+    var text = (typeof textArg === 'string' ? textArg : input.value).replace(/\s+$/, '');
+    if (!text.trim()) {
+      input.focus();
+      toast('시킬 일을 먼저 적어 주세요');
+      return;
+    }
+    if (!state.ais.length) {
+      toast('먼저 AI를 추가해 주세요');
+      openSheet(null);
+      return;
+    }
+    if (text.length > 2000) text = text.slice(0, 2000);
+
+    var msg = { id: uid(), from: 'me', text: text.trim(), ts: Date.now() };
+    var targetAtSend = state.target;
+    input.value = '';
+    state.messages.push(msg);
+    save();
+    renderTimeline(msg.id);
+    renderLive();
+    enqueue(function () { return respond(msg, targetAtSend); });
+  }
+
+  /* ===============================================================
+     14. 삭제 · 음소거 · 1:1
+  =============================================================== */
+  function talkTo(id) {
+    var ai = byId(id);
+    if (!ai) return;
+    setTab('chat');
+    setTarget(id);
+    renderChips();
+    setTimeout(function () {
+      try {
+        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        input.focus({ preventScroll: true });
+      } catch (e) { try { input.focus(); } catch (e2) {} }
+    }, 180);
+    if (ai.muted) toast(ai.name + ' AI는 음소거 상태예요. 직접 부르면 답해요.');
+    else toast(ai.name + ' AI에게 시킬 일을 적어 주세요');
+  }
+
+  function toggleMute(id) {
+    var ai = byId(id);
+    if (!ai) return;
+    ai.muted = !ai.muted;
+    renderAll();
+    save();
+    toast(ai.muted ? ai.name + ' AI를 음소거했어요 (직접 부르면 답해요)' : ai.name + ' AI를 다시 켰어요');
+  }
+
+  function deleteAi(id) {
+    var ai = byId(id);
+    if (!ai) return;
+    confirmBox(
+      '“' + ai.name + '” AI를 내보낼까요?',
+      '등록된 정보와 API 키가 이 기기에서 지워져요. 지난 대화는 이름 그대로 남습니다.',
+      '내보내기',
+      function () {
+        state.ais = state.ais.filter(function (a) { return a.id !== id; });
+        if (state.target === id) state.target = 'all';
+        state.messages.push({ id: uid(), from: 'notice', text: '“' + ai.name + '” AI를 내보냈어요', ts: Date.now() });
+        closeModal();
+        renderAll();
+        save();
+        toast(ai.name + ' AI를 내보냈어요');
+      }
+    );
+  }
+
+  /* ===============================================================
+     15. 내보내기 · 초기화
+  =============================================================== */
+  function download(name, text) {
+    try {
+      var blob = new Blob([text], { type: 'application/json;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      a.rel = 'noopener';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () {
+        if (a.parentNode) a.parentNode.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 1200);
+      return true;
+    } catch (e) {
+      try {
+        var w = window.open('', '_blank');
+        if (w) {
+          w.document.write('<pre style="white-space:pre-wrap;font:13px/1.6 -apple-system,sans-serif;padding:16px">' + esc(text) + '</pre>');
+          w.document.title = name;
+          return true;
+        }
+      } catch (e2) { /* 무시 */ }
+      return false;
+    }
+  }
+
+  function exportChat() {
+    if (!state.messages.length) { toast('내보낼 대화가 없어요'); return; }
+    var mine = 0;
+    for (var i = 0; i < state.messages.length; i++) if (state.messages[i].from === 'me') mine++;
+    var payload = {
+      room: 'AI 컨트롤타워',
+      exportedAt: new Date().toISOString(),
+      counts: { total: state.messages.length, mine: mine, ai: state.messages.length - mine },
+      ais: state.ais.map(function (a) {
+        return { name: a.name, role: a.role, mode: a.mode, provider: a.provider, model: a.model, muted: a.muted };
+      }),
+      messages: state.messages.map(function (m) {
+        return {
+          id: m.id,
+          from: m.from === 'me' ? '나' : (m.from === 'notice' ? '안내' : (m.ai && m.ai.name) || 'AI'),
+          role: m.from === 'me' || m.from === 'notice' ? '' : (m.ai && m.ai.role) || '',
+          text: m.text,
+          timestamp: new Date(m.ts).toISOString(),
+          error: !!m.error
+        };
+      })
+    };
+    var ok = download('ai-tower-chat-' + nowDay() + '.json', JSON.stringify(payload, null, 2));
+    toast(ok ? state.messages.length + '건을 파일로 내보냈어요' : '이 브라우저에서는 다운로드가 막혀 있어요');
+  }
+
+  function exportAll() {
+    var payload = {
+      room: 'AI 컨트롤타워',
+      exportedAt: new Date().toISOString(),
+      version: 1,
+      ais: state.ais.map(function (a) {
+        return {
+          name: a.name, role: a.role, prompt: a.prompt, color: a.color, glyph: a.glyph,
+          mode: a.mode, provider: a.provider, model: a.model, baseUrl: a.baseUrl,
+          muted: a.muted, createdAt: a.createdAt
+        };
+      }),
+      messages: state.messages,
+      note: 'API 키는 보안을 위해 백업 파일에 넣지 않았습니다. 복원 후 다시 입력해 주세요.'
+    };
+    var ok = download('ai-tower-backup-' + nowDay() + '.json', JSON.stringify(payload, null, 2));
+    toast(ok ? 'AI 설정과 대화를 함께 백업했어요' : '이 브라우저에서는 다운로드가 막혀 있어요');
+  }
+
+  function clearChat() {
+    if (!state.messages.length) { toast('비울 대화가 없어요'); return; }
+    confirmBox('대화를 비울까요?', 'AI 설정은 그대로 두고 대화 ' + state.messages.length + '건만 지워요. 되돌릴 수 없습니다.', '비우기', function () {
+      state.messages = [];
+      closeModal();
+      renderTimeline();
+      renderSettings();
+      save();
+      toast('대화를 비웠어요');
+    });
+  }
+
+  function resetAll() {
+    if (!state.ais.length && !state.messages.length) { toast('이미 비어 있어요'); return; }
+    confirmBox('AI 설정을 초기화할까요?', '등록한 AI ' + state.ais.length + '개와 대화 ' + state.messages.length + '건, 저장된 API 키가 모두 지워져요. 되돌릴 수 없습니다.', '모두 지우기', function () {
+      state.ais = [];
+      state.messages = [];
+      state.target = 'all';
+      typingAi = null;
+      closeModal();
+      try { window.localStorage.removeItem(STORAGE_KEY); } catch (e) { /* 무시 */ }
+      state.savedAt = null;
+      renderAll();
+      setTarget('all');
+      toast('AI 설정을 초기화했어요');
+    });
+  }
+
+  /* ===============================================================
+     16. 이벤트
+  =============================================================== */
+  chipsWrap.addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('.chip') : null;
+    if (!btn) return;
+    if (btn.hasAttribute('data-add')) { openSheet(null); return; }
+    setTarget(btn.getAttribute('data-target'));
+  });
+
+  sendBtn.addEventListener('click', function () { send(); });
+
+  input.addEventListener('keydown', function (e) {
+    var desktop = window.matchMedia && window.matchMedia('(min-width: 720px)').matches;
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && desktop) {
+      e.preventDefault();
+      send();
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      send();
+    }
+  });
+
+  document.querySelectorAll('.tab').forEach(function (t) {
+    t.addEventListener('click', function () { setTab(this.getAttribute('data-tab')); });
+  });
+
+  $('#addWide').addEventListener('click', function () { openSheet(null); });
+
+  $('#memberList').addEventListener('click', function (e) {
+    var el = e.target.closest ? e.target.closest('[data-talk],[data-edit],[data-mute],[data-del]') : null;
+    if (!el) return;
+    if (el.hasAttribute('data-talk')) talkTo(el.getAttribute('data-talk'));
+    else if (el.hasAttribute('data-edit')) openSheet(byId(el.getAttribute('data-edit')));
+    else if (el.hasAttribute('data-mute')) toggleMute(el.getAttribute('data-mute'));
+    else if (el.hasAttribute('data-del')) deleteAi(el.getAttribute('data-del'));
+  });
+
+  /* 시트 */
+  $('#sheetClose').addEventListener('click', closeSheet);
+  $('#sheetCancel').addEventListener('click', closeSheet);
+  $('#sheetSave').addEventListener('click', saveSheet);
+  sheet.addEventListener('click', function (e) { if (e.target === sheet) closeSheet(); });
+
+  sheet.addEventListener('focusin', function (e) {
+    if (focusTimer) { clearTimeout(focusTimer); focusTimer = null; }
+  });
+
+  $('#swatches').addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('.swatch') : null;
+    if (!b) return;
+    draftColor = b.getAttribute('data-color');
+    buildSwatches();
+    updatePreview();
+  });
+
+  fName.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); saveSheet(); }
+  });
+
+  fName.addEventListener('input', function () {
+    if (fName.value.trim()) {
+      $('#f-name-err').hidden = true;
+      fName.classList.remove('is-bad');
+    }
+    if (!glyphTouched) {
+      fGlyph.value = '';
+      updatePreview();
+    }
+  });
+
+  fGlyph.addEventListener('input', function () {
+    glyphTouched = !!fGlyph.value.trim();
+    updatePreview();
+  });
+
+  document.querySelectorAll('.seg-btn').forEach(function (b) {
+    b.addEventListener('click', function () { setMode(this.getAttribute('data-mode')); });
+  });
+
+  fProvider.addEventListener('change', function () {
+    applyProviderDefaults(fProvider.value, true);
+  });
+
+  $('#keyEye').addEventListener('click', function () {
+    var on = fKey.type === 'password';
+    fKey.type = on ? 'text' : 'password';
+    this.textContent = on ? '숨기기' : '보기';
+  });
+
+  /* 모달 */
+  $('#modal-cancel').addEventListener('click', closeModal);
+  $('#modal-ok').addEventListener('click', function () {
+    var fn = confirmAction;
+    if (fn) fn();
+  });
+  modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (!modal.hidden) { closeModal(); return; }
+    if (!sheet.hidden) closeSheet();
+  });
+
+  /* 설정 버튼 */
+  $('#exportChat').addEventListener('click', exportChat);
+  $('#exportAll').addEventListener('click', exportAll);
+  $('#clearChat').addEventListener('click', clearChat);
+  $('#resetAll').addEventListener('click', resetAll);
+
+  /* ===============================================================
+     17. 시작
+  =============================================================== */
+  load();
+  renderAll();
+  setTarget(state.target);
+  setMode('sim');
+  buildSwatches();
+  if (!storageOK) setTimeout(function () { toast('이 브라우저에서는 자동 저장을 쓸 수 없어요'); }, 900);
+
+  /* 테스트용 최소 노출 (페이지 동작에는 영향 없음) */
+  window.__tower = {
+    state: state,
+    simReply: simReply,
+    detectTopic: detectTopic,
+    detectArchetype: detectArchetype,
+    saveSheet: saveSheet
+  };
+})();
+</script>
+</body>
+</html>
