@@ -740,6 +740,24 @@
 
   var PALETTE = ['#2f6df6', '#0f9d58', '#e0556f', '#7c3aed', '#d97706', '#0891b2', '#db2777', '#475569', '#0d9488', '#b45309'];
 
+  /* 기본 멤버 — 소영 님 전담 비서 '피클'
+     처음 방문했거나, 예전에 다른 AI만 저장돼 있던 브라우저에도 자동으로 들어간다.
+     AI 관리에서 직접 내보내면 pickleRemoved 플래그로 기억해 다시 넣지 않는다. */
+  var DEFAULT_AI = {
+    id: 'ai-pickle',
+    name: '피클',
+    role: '소영 님 전담 생활 비서',
+    prompt: '소영 님 곁에서 일정·알림·대리 업무를 챙기는 전담 비서. 항상 깍듯한 존댓말을 쓰고, 밝고 당차며 군더더기 없이 핵심과 결론부터 말한다.',
+    color: '#0f9d58',
+    glyph: '피',
+    mode: 'sim',
+    provider: 'openai',
+    model: '',
+    baseUrl: '',
+    apiKey: '',
+    muted: false
+  };
+
   var PROVIDERS = {
     openai: {
       label: 'OpenAI 호환',
@@ -855,7 +873,8 @@
     ais: [],
     messages: [],
     target: 'all',
-    savedAt: null
+    savedAt: null,
+    pickleRemoved: false
   };
 
   var storageOK = (function () {
@@ -924,13 +943,31 @@
     };
   }
 
+  /* 기본 멤버 피클 넣기 — 플래그가 꺼져 있고 목록에 없을 때만 맨 앞에 추가 */
+  function seedDefaultAi() {
+    if (state.pickleRemoved) return false;
+    for (var i = 0; i < state.ais.length; i++) {
+      if (state.ais[i].id === DEFAULT_AI.id || state.ais[i].name === DEFAULT_AI.name) return false;
+    }
+    var made = cleanAi(DEFAULT_AI);
+    if (!made) return false;
+    state.ais.unshift(made);
+    return true;
+  }
+
   function load() {
-    if (!storageOK) return;
+    if (!storageOK) { seedDefaultAi(); return; }
     try {
       var raw = window.localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
+      if (!raw) {
+        if (seedDefaultAi()) save();
+        return;
+      }
       var data = JSON.parse(raw);
-      if (!data || typeof data !== 'object') return;
+      if (!data || typeof data !== 'object') {
+        if (seedDefaultAi()) save();
+        return;
+      }
 
       var ais = Array.isArray(data.ais) ? data.ais.map(cleanAi).filter(Boolean) : [];
       var seen = {};
@@ -943,11 +980,16 @@
       var tgt = data.target;
       state.target = (tgt === 'all' || byId(tgt)) ? tgt : 'all';
       state.savedAt = typeof data.savedAt === 'number' ? data.savedAt : null;
+      state.pickleRemoved = !!data.pickleRemoved;
+      /* 기존에 다른 AI만 저장돼 있던 브라우저: 기존 AI·대화는 그대로 두고 피클만 맨 앞에 더한다 */
+      if (seedDefaultAi()) save();
     } catch (e) {
       state.ais = [];
       state.messages = [];
       state.target = 'all';
       state.savedAt = null;
+      state.pickleRemoved = false;
+      seedDefaultAi();
     }
   }
 
@@ -961,6 +1003,7 @@
         ais: state.ais,
         messages: state.messages,
         target: state.target,
+        pickleRemoved: !!state.pickleRemoved,
         savedAt: now
       }));
       state.savedAt = now;
@@ -1103,8 +1146,8 @@
     wrap.className = 'welcome';
     wrap.innerHTML =
       '<div class="w-ico"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.2" stroke="#2fbd77" stroke-width="1.8"/><path d="M12 8.4v7.2M8.4 12h7.2" stroke="#2fbd77" stroke-width="1.8" stroke-linecap="round"/></svg></div>' +
-      '<h3>아직 AI가 없어요</h3>' +
-      '<p>이름과 정보를 넣으면 그 AI가 바로 이 방에 들어와서<br>소영 님이 시키는 일에 답해요.<br>제가 미리 정해 둔 AI는 없습니다.</p>' +
+      '<h3>지금은 AI가 하나도 없어요</h3>' +
+      '<p>기본으로 들어 있던 <b>피클</b>까지 모두 내보낸 상태예요.<br>이름과 정보를 넣으면 그 AI가 바로 이 방에 들어와서<br>소영 님이 시키는 일에 답해요.</p>' +
       '<button class="btn-dark" id="welcomeAdd" type="button">+ 새 AI 추가하기</button>' +
       '<ul class="points">' +
         '<li><b>이름</b>만 있으면 바로 추가되고, 나중에 수정할 수 있어요.</li>' +
@@ -1603,7 +1646,7 @@
   var TOPICS = [
     { id: 'help', kw: ['뭐 할 수', '무엇을 할', '가능한', '소개해', '도와줄', '네가 뭘', '어떤 걸', '잘하는'] },
     { id: 'weather', kw: ['날씨', '비', '눈', '기온', '우산', '미세먼지', '예보', '태풍', '더위', '추위'] },
-    { id: 'schedule', kw: ['일정', '약속', '시간', '날짜', '회의', '출근', '근무', '마감', '언제'] },
+    { id: 'schedule', kw: ['일정', '약속', '시간', '날짜', '회의', '출근', '근무', '마감', '언제', '알람', '모닝콜', '깨워', '기상', '준비물'] },
     { id: 'money', kw: ['돈', '가격', '예산', '비용', '구매', '할인', '최저가', '결제', '지출', '수익'] },
     { id: 'code', kw: ['코드', '버그', '에러', '개발', '서버', '배포', '함수', '스크립트', '앱', '웹'] },
     { id: 'writing', kw: ['글', '문장', '카피', '블로그', '제목', '원고', '소개문', '공지'] },
@@ -1747,6 +1790,13 @@
     return best.id;
   }
 
+  /* 한 글자 키워드는 단어 앞에 올 때만 맞는 것으로 본다 ('준비물'의 '비'를 날씨로 읽지 않게) */
+  function kwHit(s, k) {
+    if (!k) return false;
+    if (k.length > 1) return s.indexOf(k) !== -1;
+    return new RegExp('(^|[^\\uAC00-\\uD7A3])' + k).test(s);
+  }
+
   function detectTopic(text) {
     var s = String(text).toLowerCase();
     var best = { id: 'general', score: 0 };
@@ -1754,7 +1804,7 @@
       var score = 0;
       for (var j = 0; j < TOPICS[i].kw.length; j++) {
         var k = TOPICS[i].kw[j];
-        if (k && s.indexOf(k) !== -1) score += (k.length > 1 ? 2 : 1);
+        if (kwHit(s, k)) score += (k.length > 1 ? 2 : 1);
       }
       if (score > best.score) best = { id: TOPICS[i].id, score: score };
     }
@@ -2162,12 +2212,15 @@
   function deleteAi(id) {
     var ai = byId(id);
     if (!ai) return;
+    var isDefault = (ai.id === DEFAULT_AI.id);
     confirmBox(
       '“' + ai.name + '” AI를 내보낼까요?',
-      '등록된 정보와 API 키가 이 기기에서 지워져요. 지난 대화는 이름 그대로 남습니다.',
+      '등록된 정보와 API 키가 이 기기에서 지워져요. 지난 대화는 이름 그대로 남습니다.' +
+        (isDefault ? ' 기본 멤버라 내보내면 새로고침해도 다시 들어오지 않아요.' : ''),
       '내보내기',
       function () {
         state.ais = state.ais.filter(function (a) { return a.id !== id; });
+        if (isDefault) state.pickleRemoved = true;
         if (state.target === id) state.target = 'all';
         state.messages.push({ id: uid(), from: 'notice', text: '“' + ai.name + '” AI를 내보냈어요', ts: Date.now() });
         closeModal();
@@ -2269,10 +2322,11 @@
 
   function resetAll() {
     if (!state.ais.length && !state.messages.length) { toast('이미 비어 있어요'); return; }
-    confirmBox('AI 설정을 초기화할까요?', '등록한 AI ' + state.ais.length + '개와 대화 ' + state.messages.length + '건, 저장된 API 키가 모두 지워져요. 되돌릴 수 없습니다.', '모두 지우기', function () {
+    confirmBox('AI 설정을 초기화할까요?', '등록한 AI ' + state.ais.length + '개와 대화 ' + state.messages.length + '건, 저장된 API 키가 모두 지워져요. 기본 멤버 피클도 함께 지워지며, 되돌릴 수 없습니다.', '모두 지우기', function () {
       state.ais = [];
       state.messages = [];
       state.target = 'all';
+      state.pickleRemoved = true;
       typingAi = null;
       closeModal();
       try { window.localStorage.removeItem(STORAGE_KEY); } catch (e) { /* 무시 */ }
